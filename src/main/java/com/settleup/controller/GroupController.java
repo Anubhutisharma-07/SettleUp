@@ -4,9 +4,12 @@ import com.settleup.dto.AddMemberRequest;
 import com.settleup.dto.CreateGroupRequest;
 import com.settleup.entity.ExpenseGroup;
 import com.settleup.entity.GroupMember;
-import com.settleup.security.JwtUtil;
-import com.settleup.service.GroupService;
+import com.settleup.repository.ExpenseRepository;
 import com.settleup.repository.UserRepository;
+import com.settleup.security.JwtUtil;
+import com.settleup.service.ExpenseService;
+import com.settleup.service.GroupService;
+import com.settleup.service.SettlementService;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,16 +20,21 @@ import java.util.Map;
 public class GroupController {
 
     private final GroupService groupService;
+    private final ExpenseService expenseService;
+    private final SettlementService settlementService;
     private final JwtUtil jwtUtil;
     private final UserRepository userRepository;
 
-    public GroupController(GroupService groupService, JwtUtil jwtUtil, UserRepository userRepository) {
+    public GroupController(GroupService groupService, ExpenseService expenseService,
+                           SettlementService settlementService, JwtUtil jwtUtil,
+                           UserRepository userRepository) {
         this.groupService = groupService;
+        this.expenseService = expenseService;
+        this.settlementService = settlementService;
         this.jwtUtil = jwtUtil;
         this.userRepository = userRepository;
     }
 
-    // Helper: extracts the logged-in user's ID from the JWT in the Authorization header
     private Long getUserIdFromToken(String authHeader) {
         String token = authHeader.replace("Bearer ", "");
         String email = jwtUtil.extractEmail(token);
@@ -60,5 +68,15 @@ public class GroupController {
     @GetMapping("/{groupId}/members")
     public List<GroupMember> getMembers(@PathVariable Long groupId) {
         return groupService.getGroupMembers(groupId);
+    }
+
+    @GetMapping("/{groupId}/balances")
+    public List<ExpenseRepository.UserBalance> getBalances(@PathVariable Long groupId) {
+        return expenseService.getBalances(groupId);
+    }
+
+    @GetMapping("/{groupId}/settlements")
+    public List<SettlementService.Transaction> getSettlement(@PathVariable Long groupId) {
+        return settlementService.computeSettlement(groupId);
     }
 }
