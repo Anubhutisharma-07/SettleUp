@@ -6,17 +6,18 @@ import { useAuth } from './AuthContext';
 
 function App() {
   const [page, setPage] = useState('login');
-  const [selectedGroupId, setSelectedGroupId] = useState(null);
+  const [selectedGroup, setSelectedGroup] = useState(null);
   const { auth } = useAuth();
 
   if (!auth) {
     return <Login onNavigate={setPage} />;
   }
 
-  if (page === 'groupDetail' && selectedGroupId) {
+  if (page === 'groupDetail' && selectedGroup) {
     return (
       <GroupDetail
-        groupId={selectedGroupId}
+        groupId={selectedGroup.id}
+        group={selectedGroup}
         onBack={() => setPage('dashboard')}
       />
     );
@@ -25,8 +26,8 @@ function App() {
   return (
     <Dashboard
       onNavigate={setPage}
-      onSelectGroup={(groupId) => {
-        setSelectedGroupId(groupId);
+      onSelectGroup={(group) => {
+        setSelectedGroup(group);
         setPage('groupDetail');
       }}
     />

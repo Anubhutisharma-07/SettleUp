@@ -2,53 +2,38 @@ import { useState, useEffect } from 'react';
 import { api } from '../api';
 import { useAuth } from '../AuthContext';
 import ThemeToggle from '../components/ThemeToggle';
-
-const AVATAR_COLORS = [
-  'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300',
-  'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
-  'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
-  'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300',
-  'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300',
-];
-
-function colorFor(id) {
-  return AVATAR_COLORS[id % AVATAR_COLORS.length];
-}
-
-function initials(nameOrId) {
-  if (typeof nameOrId === 'string' && nameOrId.includes(' ')) {
-    return nameOrId.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase();
-  }
-  return `#${nameOrId}`;
-}
+import Avatar from '../components/Avatar';
+import ErrorAlert from '../components/ErrorAlert';
+import { formatMoney, initialsOf } from '../utils/format';
+import {
+  IconPlus,
+  IconArrowLeft,
+  IconArrowRight,
+  IconUsers,
+  IconReceipt,
+  IconScale,
+  IconCheckCircle,
+  IconSpinner,
+  IconClock,
+  IconHandshake,
+  IconAlert,
+} from '../components/Icons';
 
 const TAB_ICONS = {
-  expenses: (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <rect x="3" y="4" width="18" height="16" rx="2" />
-      <path d="M3 10h18M8 4v16" />
-    </svg>
-  ),
-  members: (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
-      <circle cx="9" cy="7" r="4" />
-      <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
-    </svg>
-  ),
-  balances: (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" />
-    </svg>
-  ),
-  settlements: (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M20 6L9 17l-5-5" />
-    </svg>
-  ),
+  expenses: <IconReceipt size={15} />,
+  members: <IconUsers size={15} />,
+  balances: <IconScale size={15} />,
+  settlements: <IconHandshake size={15} />,
 };
 
-export default function GroupDetail({ groupId, onBack }) {
+function formatDate(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+}
+
+export default function GroupDetail({ groupId, group, onBack }) {
   const { auth } = useAuth();
   const [activeTab, setActiveTab] = useState('expenses');
 
@@ -92,40 +77,83 @@ export default function GroupDetail({ groupId, onBack }) {
     { key: 'settlements', label: 'Settle Up' },
   ];
 
-  const totalSpent = expenses.reduce((sum, e) => sum + e.amount, 0);
+  const totalSpent = expenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
+  const unpaidCount = settlements.filter((s) => Number(s.amount) > 0.005).length;
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
-      <header className="border-b border-slate-200 dark:border-slate-800 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={onBack}
-            className="rounded-md p-1.5 text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M19 12H5M12 19l-7-7 7-7" />
-            </svg>
-          </button>
-          <div>
-            <p className="text-xs text-slate-400 dark:text-slate-500">Group #{groupId}</p>
-            <h1 className="text-base font-semibold text-slate-900 dark:text-slate-50">
-              {members.length} member{members.length !== 1 ? 's' : ''} · ₹{totalSpent.toFixed(2)} spent
-            </h1>
+    <div className="min-h-screen bg-slate-100 dark:bg-slate-950">
+      {/* Header */}
+      <header className="sticky top-0 z-40 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/70 dark:border-slate-800">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <button
+              onClick={onBack}
+              className="rounded-xl p-2 -ml-2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              aria-label="Back to groups"
+            >
+              <IconArrowLeft size={18} />
+            </button>
+            <div className="min-w-0">
+              <h1 className="font-bold text-slate-900 dark:text-white truncate leading-tight">
+                {group?.name || `Group #${groupId}`}
+              </h1>
+              <p className="text-xs text-slate-400 dark:text-slate-500">
+                {members.length} member{members.length !== 1 ? 's' : ''} · {formatMoney(totalSpent)} spent
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
           </div>
         </div>
-        <ThemeToggle />
       </header>
 
-      <div className="max-w-2xl mx-auto px-6 py-6">
-        <div className="flex gap-1 mb-6 bg-slate-100 dark:bg-slate-800 rounded-lg p-1">
+      <main className="max-w-3xl mx-auto px-4 sm:px-6 py-6 animate-fade-up">
+        {error && (
+          <div className="mb-5 flex flex-wrap items-center gap-3">
+            <ErrorAlert>{error}</ErrorAlert>
+            <button onClick={loadAll} className="btn-secondary !py-2">
+              Retry
+            </button>
+          </div>
+        )}
+
+        {/* Stat cards */}
+        <section className="grid grid-cols-3 gap-3">
+          <div className="card p-4 flex flex-col gap-1">
+            <div className="flex items-center gap-1.5 text-slate-400 dark:text-slate-500 text-xs font-semibold uppercase tracking-wide">
+              <IconUsers size={13} /> Members
+            </div>
+            <span className="text-2xl font-extrabold text-slate-900 dark:text-white">{members.length}</span>
+          </div>
+          <div className="card p-4 flex flex-col gap-1">
+            <div className="flex items-center gap-1.5 text-slate-400 dark:text-slate-500 text-xs font-semibold uppercase tracking-wide">
+              <IconReceipt size={13} /> Expenses
+            </div>
+            <span className="text-2xl font-extrabold text-slate-900 dark:text-white">{expenses.length}</span>
+          </div>
+          <div className="card p-4 flex flex-col gap-1">
+            <div className="flex items-center gap-1.5 text-slate-400 dark:text-slate-500 text-xs font-semibold uppercase tracking-wide">
+              <IconHandshake size={13} /> To settle
+            </div>
+            <span
+              className={`text-2xl font-extrabold ${unpaidCount > 0 ? 'text-amber-500' : 'text-brand-500'}`}
+            >
+              {unpaidCount}
+            </span>
+          </div>
+        </section>
+
+        {/* Tabs */}
+        <div className="mt-6 flex gap-1 p-1 rounded-2xl bg-slate-200/60 dark:bg-slate-900 border border-slate-200/70 dark:border-slate-800">
           {tabs.map((tab) => (
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
-              className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+              className={`flex-1 flex items-center justify-center gap-1.5 px-2 py-2.5 rounded-xl text-sm font-semibold transition-all ${
                 activeTab === tab.key
-                  ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm'
-                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                  ? 'bg-white dark:bg-slate-800 text-brand-600 dark:text-brand-400 shadow-card'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
               }`}
             >
               {TAB_ICONS[tab.key]}
@@ -134,35 +162,49 @@ export default function GroupDetail({ groupId, onBack }) {
           ))}
         </div>
 
-        {error && (
-          <p className="text-sm text-rose-600 dark:text-rose-400 mb-4">{error}</p>
-        )}
-
-        {loading ? (
-          <p className="text-sm text-slate-500 dark:text-slate-400">Loading...</p>
-        ) : (
-          <>
-            {activeTab === 'expenses' && (
-              <ExpensesTab groupId={groupId} expenses={expenses} onAdded={loadAll} />
-            )}
-            {activeTab === 'members' && (
-              <MembersTab groupId={groupId} members={members} onAdded={loadAll} />
-            )}
-            {activeTab === 'balances' && <BalancesTab balances={balances} />}
-            {activeTab === 'settlements' && <SettlementsTab settlements={settlements} />}
-          </>
-        )}
-      </div>
+        {/* Tab content */}
+        <div className="mt-5">
+          {loading ? (
+            <div className="space-y-3 animate-pulse">
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="card p-4 flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-800" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 w-2/3 rounded bg-slate-200 dark:bg-slate-800" />
+                    <div className="h-3 w-1/3 rounded bg-slate-100 dark:bg-slate-800/60" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <>
+              {activeTab === 'expenses' && (
+                <ExpensesTab groupId={groupId} expenses={expenses} members={members} onAdded={loadAll} />
+              )}
+              {activeTab === 'members' && <MembersTab groupId={groupId} members={members} onAdded={loadAll} />}
+              {activeTab === 'balances' && <BalancesTab balances={balances} />}
+              {activeTab === 'settlements' && <SettlementsTab settlements={settlements} />}
+            </>
+          )}
+        </div>
+      </main>
     </div>
   );
 }
 
-function ExpensesTab({ groupId, expenses, onAdded }) {
+/* ------------------------------ Expenses ---------------------------------- */
+
+function ExpensesTab({ groupId, expenses, members, onAdded }) {
   const { auth } = useAuth();
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+
+  const memberNameById = {};
+  members.forEach((m) => {
+    memberNameById[m.userId] = `User #${m.userId}`;
+  });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -182,68 +224,74 @@ function ExpensesTab({ groupId, expenses, onAdded }) {
 
   return (
     <div>
-      <form
-        onSubmit={handleSubmit}
-        className="flex gap-2 mb-5 border border-slate-200 dark:border-slate-800 rounded-lg p-3 bg-white dark:bg-slate-800/30"
-      >
-        <input
-          type="number"
-          step="0.01"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-          placeholder="₹0.00"
-          required
-          className="w-28 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm font-mono text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-600"
-        />
-        <input
-          type="text"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          placeholder="What was it for?"
-          required
-          className="flex-1 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-600"
-        />
-        <button
-          type="submit"
-          disabled={submitting}
-          className="rounded-md bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium px-4 py-2 transition-colors flex-shrink-0"
-        >
-          Add
-        </button>
+      {/* Add expense card */}
+      <form onSubmit={handleSubmit} className="card p-4 sm:p-5 mb-5">
+        <p className="text-sm font-bold text-slate-900 dark:text-white mb-3 flex items-center gap-1.5">
+          <IconPlus size={15} className="text-brand-500" /> Add an expense
+        </p>
+        <div className="flex flex-col sm:flex-row gap-2.5">
+          <div className="relative sm:w-32">
+            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 font-semibold">₹</span>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              placeholder="0.00"
+              required
+              className="input font-mono !pl-8"
+            />
+          </div>
+          <input
+            type="text"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="What was it for? e.g. Dinner at Dragos"
+            required
+            className="input flex-1"
+          />
+          <button type="submit" disabled={submitting} className="btn-primary shrink-0">
+            {submitting ? <IconSpinner size={16} /> : <IconPlus size={16} />}
+            {submitting ? 'Adding…' : 'Add'}
+          </button>
+        </div>
+        {error && (
+          <div className="mt-3">
+            <ErrorAlert>{error}</ErrorAlert>
+          </div>
+        )}
       </form>
 
-      {error && <p className="text-sm text-rose-600 dark:text-rose-400 mb-4">{error}</p>}
-
       {expenses.length === 0 ? (
-        <div className="text-center py-10 border border-dashed border-slate-300 dark:border-slate-700 rounded-lg">
-          <p className="text-sm text-slate-500 dark:text-slate-400">No expenses yet.</p>
-        </div>
+        <EmptyState
+          icon={<IconReceipt size={28} />}
+          title="No expenses yet"
+          text="Add the first bill above — everyone's balance updates automatically."
+        />
       ) : (
-        <div className="rounded-lg border border-slate-200 dark:border-slate-800 overflow-hidden bg-white dark:bg-slate-800/30">
-          {expenses.map((exp, i) => (
-            <div
-              key={exp.id}
-              className={`flex items-center gap-3 px-4 py-3.5 ${
-                i !== expenses.length - 1 ? 'border-b border-slate-200 dark:border-slate-800' : ''
-              }`}
-            >
-              <div
-                className={`w-9 h-9 rounded-md flex items-center justify-center text-xs font-semibold flex-shrink-0 ${colorFor(
-                  exp.paidBy
-                )}`}
-              >
-                {initials(exp.paidBy)}
-              </div>
+        <div className="card divide-y divide-slate-100 dark:divide-slate-800 overflow-hidden">
+          {expenses.map((exp) => (
+            <div key={exp.id} className="flex items-center gap-3.5 px-4 sm:px-5 py-4 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+              <Avatar id={exp.paidBy} name={`User ${exp.paidBy}`} size="md" />
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-slate-900 dark:text-slate-50 truncate">
-                  {exp.description}
-                </p>
-                <p className="text-xs text-slate-400 dark:text-slate-500">
-                  Paid by user #{exp.paidBy}
+                <p className="font-semibold text-slate-900 dark:text-white truncate">{exp.description}</p>
+                <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5 flex items-center gap-1.5">
+                  <span className="font-medium text-slate-500 dark:text-slate-400">
+                    {memberNameById[exp.paidBy] || `User #${exp.paidBy}`}
+                  </span>
+                  {formatDate(exp.expenseDate) && (
+                    <>
+                      <span>·</span>
+                      <span className="flex items-center gap-1">
+                        <IconClock size={11} /> {formatDate(exp.expenseDate)}
+                      </span>
+                    </>
+                  )}
                 </p>
               </div>
-              <span className="font-mono text-sm font-medium text-slate-900 dark:text-slate-50 flex-shrink-0">
-                ₹{exp.amount.toFixed(2)}
+              <span className="font-mono font-semibold text-slate-900 dark:text-white shrink-0">
+                {formatMoney(exp.amount)}
               </span>
             </div>
           ))}
@@ -252,6 +300,8 @@ function ExpensesTab({ groupId, expenses, onAdded }) {
     </div>
   );
 }
+
+/* ------------------------------ Members ----------------------------------- */
 
 function MembersTab({ groupId, members, onAdded }) {
   const { auth } = useAuth();
@@ -276,50 +326,44 @@ function MembersTab({ groupId, members, onAdded }) {
 
   return (
     <div>
-      <form
-        onSubmit={handleSubmit}
-        className="flex gap-2 mb-5 border border-slate-200 dark:border-slate-800 rounded-lg p-3 bg-white dark:bg-slate-800/30"
-      >
-        <input
-          type="number"
-          value={userId}
-          onChange={(e) => setUserId(e.target.value)}
-          placeholder="User ID to add"
-          required
-          className="flex-1 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-600"
-        />
-        <button
-          type="submit"
-          disabled={submitting}
-          className="rounded-md bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium px-4 py-2 transition-colors flex-shrink-0"
-        >
-          Add
-        </button>
+      <form onSubmit={handleSubmit} className="card p-4 sm:p-5 mb-5">
+        <p className="text-sm font-bold text-slate-900 dark:text-white mb-3 flex items-center gap-1.5">
+          <IconUsers size={15} className="text-brand-500" /> Add a member
+        </p>
+        <div className="flex flex-col sm:flex-row gap-2.5">
+          <input
+            type="number"
+            min="1"
+            value={userId}
+            onChange={(e) => setUserId(e.target.value)}
+            placeholder="Enter the user's ID"
+            required
+            className="input flex-1"
+          />
+          <button type="submit" disabled={submitting} className="btn-primary shrink-0">
+            {submitting ? <IconSpinner size={16} /> : <IconUsers size={16} />}
+            {submitting ? 'Adding…' : 'Add member'}
+          </button>
+        </div>
+        {error && (
+          <div className="mt-3">
+            <ErrorAlert>{error}</ErrorAlert>
+          </div>
+        )}
       </form>
 
-      {error && <p className="text-sm text-rose-600 dark:text-rose-400 mb-4">{error}</p>}
-
-      <div className="rounded-lg border border-slate-200 dark:border-slate-800 overflow-hidden bg-white dark:bg-slate-800/30">
-        {members.map((m, i) => (
-          <div
-            key={m.id}
-            className={`flex items-center gap-3 px-4 py-3.5 ${
-              i !== members.length - 1 ? 'border-b border-slate-200 dark:border-slate-800' : ''
-            }`}
-          >
-            <div
-              className={`w-9 h-9 rounded-md flex items-center justify-center text-xs font-semibold flex-shrink-0 ${colorFor(
-                m.userId
-              )}`}
-            >
-              {initials(m.userId)}
-            </div>
-            <span className="flex-1 text-sm text-slate-900 dark:text-slate-50">
-              User #{m.userId}
-            </span>
-            {m.role === 'ADMIN' && (
-              <span className="text-xs font-medium uppercase tracking-wide text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-2 py-0.5 rounded">
+      <div className="card divide-y divide-slate-100 dark:divide-slate-800 overflow-hidden">
+        {members.map((m) => (
+          <div key={m.id} className="flex items-center gap-3.5 px-4 sm:px-5 py-4">
+            <Avatar id={m.userId} name={`User ${m.userId}`} size="md" />
+            <span className="flex-1 font-semibold text-slate-900 dark:text-white">User #{m.userId}</span>
+            {m.role === 'ADMIN' ? (
+              <span className="text-[11px] font-bold uppercase tracking-wider text-brand-700 dark:text-brand-300 bg-brand-100 dark:bg-brand-900/40 px-2.5 py-1 rounded-full">
                 Admin
+              </span>
+            ) : (
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-full">
+                Member
               </span>
             )}
           </div>
@@ -329,45 +373,52 @@ function MembersTab({ groupId, members, onAdded }) {
   );
 }
 
+/* ------------------------------ Balances ---------------------------------- */
+
 function BalancesTab({ balances }) {
   if (balances.length === 0) {
     return (
-      <div className="text-center py-10 border border-dashed border-slate-300 dark:border-slate-700 rounded-lg">
-        <p className="text-sm text-slate-500 dark:text-slate-400">No balances yet.</p>
-      </div>
+      <EmptyState
+        icon={<IconScale size={28} />}
+        title="No balances yet"
+        text="Once you add expenses, each member's net balance shows up here."
+      />
     );
   }
 
   return (
-    <div className="rounded-lg border border-slate-200 dark:border-slate-800 overflow-hidden bg-white dark:bg-slate-800/30">
-      {balances.map((b, i) => {
-        const isPositive = b.netBalance >= 0;
+    <div className="space-y-2.5">
+      {balances.map((b) => {
+        const owes = Number(b.netBalance) < 0;
+        const getsBack = Number(b.netBalance) > 0;
+        const isEven = Number(b.netBalance) === 0;
         return (
           <div
             key={b.userId}
-            className={`flex items-center gap-3 px-4 py-3.5 ${
-              i !== balances.length - 1 ? 'border-b border-slate-200 dark:border-slate-800' : ''
-            }`}
+            className="card p-4 sm:px-5 flex items-center gap-3.5 hover:shadow-card-md transition-shadow"
           >
-            <div
-              className={`w-9 h-9 rounded-md flex items-center justify-center text-xs font-semibold flex-shrink-0 ${colorFor(
-                b.userId
-              )}`}
-            >
-              {initials(b.userName)}
+            <Avatar id={b.userId} name={b.userName} size="lg" />
+            <div className="flex-1 min-w-0">
+              <p className="font-bold text-slate-900 dark:text-white truncate">{b.userName}</p>
+              {owes && (
+                <p className="text-sm text-rose-500 dark:text-rose-400 mt-0.5">
+                  owes <span className="font-mono font-semibold">{formatMoney(Math.abs(b.netBalance))}</span>
+                </p>
+              )}
+              {getsBack && (
+                <p className="text-sm text-brand-600 dark:text-brand-400 mt-0.5">
+                  gets back <span className="font-mono font-semibold">{formatMoney(b.netBalance)}</span>
+                </p>
+              )}
+              {isEven && <p className="text-sm text-slate-400 dark:text-slate-500 mt-0.5">is all settled</p>}
             </div>
-            <span className="flex-1 text-sm text-slate-900 dark:text-slate-50">
-              {b.userName}
-            </span>
             <span
-              className={`font-mono text-sm font-medium ${
-                isPositive
-                  ? 'text-emerald-600 dark:text-emerald-400'
-                  : 'text-rose-600 dark:text-rose-400'
+              className={`shrink-0 font-mono text-lg font-bold ${
+                owes ? 'text-rose-500 dark:text-rose-400' : getsBack ? 'text-brand-600 dark:text-brand-400' : 'text-slate-400'
               }`}
             >
-              {isPositive ? '+' : ''}
-              ₹{b.netBalance.toFixed(2)}
+              {owes ? '−' : getsBack ? '+' : ''}
+              {formatMoney(Math.abs(b.netBalance))}
             </span>
           </div>
         );
@@ -376,26 +427,18 @@ function BalancesTab({ balances }) {
   );
 }
 
+/* ------------------------------ Settlements -------------------------------- */
+
 function SettlementsTab({ settlements }) {
   if (settlements.length === 0) {
     return (
-      <div className="text-center py-14 border border-dashed border-emerald-300 dark:border-emerald-800 rounded-lg bg-emerald-50/50 dark:bg-emerald-900/10">
-        <svg
-          width="32"
-          height="32"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          className="mx-auto mb-2 text-emerald-500"
-        >
-          <path d="M20 6L9 17l-5-5" />
-        </svg>
-        <p className="text-sm font-medium text-emerald-700 dark:text-emerald-400">
-          All settled up
-        </p>
-        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-          Nobody owes anybody anything.
+      <div className="card border-brand-200 dark:border-brand-800 bg-gradient-to-b from-brand-50 to-white dark:from-brand-900/20 dark:to-slate-900 rounded-2xl py-14 px-6 text-center animate-fade-in">
+        <div className="mx-auto w-16 h-16 rounded-full bg-brand-100 dark:bg-brand-900/50 text-brand-600 dark:text-brand-400 flex items-center justify-center mb-4">
+          <IconCheckCircle size={32} />
+        </div>
+        <h3 className="text-lg font-extrabold text-brand-700 dark:text-brand-300">All settled up!</h3>
+        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+          Nobody owes anybody anything. Enjoy the peace.
         </p>
       </div>
     );
@@ -403,38 +446,54 @@ function SettlementsTab({ settlements }) {
 
   return (
     <div className="space-y-2.5">
+      <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 px-1">
+        Suggested payments — {settlements.length} transaction{settlements.length !== 1 ? 's' : ''}
+      </p>
       {settlements.map((s, i) => (
         <div
           key={i}
-          className="flex items-center gap-3 border border-slate-200 dark:border-slate-800 rounded-lg px-4 py-3.5 bg-white dark:bg-slate-800/30"
+          className="card p-4 sm:px-5 flex items-center gap-3 hover:shadow-card-md transition-shadow flex-wrap sm:flex-nowrap"
         >
-          <div
-            className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0 ${colorFor(
-              s.fromUserId
-            )}`}
-          >
-            {initials(s.fromUserName)}
+          <div className="flex items-center gap-2.5 min-w-0">
+            <Avatar id={s.fromUserId} name={s.fromUserName} size="md" />
+            <div className="text-center shrink-0">
+              <IconArrowRight size={16} className="text-brand-500" />
+            </div>
+            <Avatar id={s.toUserId} name={s.toUserName} size="md" />
           </div>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-slate-300 dark:text-slate-600 flex-shrink-0">
-            <path d="M5 12h14M13 6l6 6-6 6" />
-          </svg>
-          <div
-            className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0 ${colorFor(
-              s.toUserId
-            )}`}
-          >
-            {initials(s.toUserName)}
+          <div className="flex-1 min-w-0">
+            <p className="text-sm text-slate-600 dark:text-slate-300 truncate">
+              <span className="font-bold text-slate-900 dark:text-white">{s.fromUserName}</span>
+              {' '}owes{' '}
+              <span className="font-bold text-slate-900 dark:text-white">{s.toUserName}</span>
+            </p>
+            <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
+              {initialsOf(s.fromUserName)} pays {initialsOf(s.toUserName)} directly
+            </p>
           </div>
-          <span className="flex-1 text-sm text-slate-700 dark:text-slate-300 truncate">
-            <span className="font-medium text-slate-900 dark:text-slate-50">{s.fromUserName}</span>{' '}
-            owes{' '}
-            <span className="font-medium text-slate-900 dark:text-slate-50">{s.toUserName}</span>
-          </span>
-          <span className="font-mono text-sm font-semibold text-indigo-600 dark:text-indigo-400 flex-shrink-0">
-            ₹{s.amount.toFixed(2)}
+          <span className="shrink-0 rounded-xl bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300 font-mono font-bold px-3.5 py-2">
+            {formatMoney(s.amount)}
           </span>
         </div>
       ))}
+      <div className="flex items-start gap-2 text-xs text-slate-400 dark:text-slate-500 px-1 pt-1">
+        <IconAlert size={13} className="mt-0.5 shrink-0" />
+        These payments clear all debts using the fewest possible transfers.
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------ Empty state -------------------------------- */
+
+function EmptyState({ icon, title, text }) {
+  return (
+    <div className="card border-2 border-dashed border-slate-200 dark:border-slate-800 shadow-none rounded-2xl py-14 px-6 text-center animate-fade-in">
+      <div className="mx-auto w-14 h-14 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 flex items-center justify-center mb-4">
+        {icon}
+      </div>
+      <h3 className="font-bold text-slate-900 dark:text-white">{title}</h3>
+      <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-xs mx-auto">{text}</p>
     </div>
   );
 }

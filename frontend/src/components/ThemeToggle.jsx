@@ -1,4 +1,5 @@
 import { useTheme } from '../ThemeContext';
+import { IconSun, IconMoon } from './Icons';
 
 export default function ThemeToggle() {
   const { dark, toggle } = useTheme();
@@ -6,19 +7,11 @@ export default function ThemeToggle() {
   return (
     <button
       onClick={toggle}
-      className="rounded-md border border-slate-200 dark:border-slate-700 p-1.5 text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:border-indigo-300 dark:hover:border-indigo-700 transition-colors"
+      className="rounded-xl p-2.5 text-slate-500 dark:text-amber-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
       aria-label="Toggle theme"
+      title={dark ? 'Switch to light mode' : 'Switch to dark mode'}
     >
-      {dark ? (
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <circle cx="12" cy="12" r="5" />
-          <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
-        </svg>
-      ) : (
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-        </svg>
-      )}
+      {dark ? <IconSun size={16} /> : <IconMoon size={16} />}
     </button>
   );
 }
