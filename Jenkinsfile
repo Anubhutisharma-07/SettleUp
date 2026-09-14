@@ -11,7 +11,8 @@ pipeline {
         stage('Build Backend') {
             steps {
                 dir('settleup') {
-                    bat 'mvnw.cmd clean compile'
+                    sh 'chmod +x mvnw'
+                    sh './mvnw clean compile'
                 }
             }
         }
@@ -19,7 +20,7 @@ pipeline {
         stage('Test Backend') {
             steps {
                 dir('settleup') {
-                    bat 'mvnw.cmd test'
+                    sh './mvnw test'
                 }
             }
         }
@@ -27,7 +28,7 @@ pipeline {
         stage('Package Backend') {
             steps {
                 dir('settleup') {
-                    bat 'mvnw.cmd clean package -DskipTests'
+                    sh './mvnw clean package -DskipTests'
                 }
             }
         }
