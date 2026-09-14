@@ -1,0 +1,39 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: settleup-postgres
+    environment:
+      POSTGRES_DB: settleup
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: abc@123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./settleup/src/main/resources/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./settleup
+      dockerfile: Dockerfile
+    container_name: settleup-backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: settleup
+      DB_USERNAME: postgres
+      DB_PASSWORD: abc@123
+      JWT_SECRET: change-this-to-a-long-random-secret-key-at-least-32-characters-long
+    ports:
+      - "8080:8080"
+
+volumes:
+  postgres_data:
