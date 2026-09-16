@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+
+# Frontend build output
+frontend/build/
+
+# Backend build output
+target/
+${project.build.directory}/
+*.class
+
+# Logs
+*.log
+npm-debug.log*
+
+# IDE / editor
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local tooling (not part of the project)
+.freebuff/
+
+# Env files
+.env
+.env.local
