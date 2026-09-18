@@ -5,6 +5,7 @@ import com.settleup.entity.Expense;
 import com.settleup.repository.UserRepository;
 import com.settleup.security.JwtUtil;
 import com.settleup.service.ExpenseService;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -34,7 +35,7 @@ public class ExpenseController {
     @PostMapping
     public Expense addExpense(@RequestHeader("Authorization") String authHeader,
                               @PathVariable Long groupId,
-                              @RequestBody AddExpenseRequest request) {
+                              @Valid @RequestBody AddExpenseRequest request) {
         Long userId = getUserIdFromToken(authHeader);
         return expenseService.addExpense(groupId, userId, request.getAmount(), request.getDescription());
     }

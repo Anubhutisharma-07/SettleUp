@@ -10,6 +10,7 @@ import com.settleup.security.JwtUtil;
 import com.settleup.service.ExpenseService;
 import com.settleup.service.GroupService;
 import com.settleup.service.SettlementService;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -45,7 +46,7 @@ public class GroupController {
 
     @PostMapping
     public ExpenseGroup createGroup(@RequestHeader("Authorization") String authHeader,
-                                    @RequestBody CreateGroupRequest request) {
+                                    @Valid @RequestBody CreateGroupRequest request) {
         Long userId = getUserIdFromToken(authHeader);
         return groupService.createGroup(request.getName(), userId);
     }
@@ -53,7 +54,7 @@ public class GroupController {
     @PostMapping("/{groupId}/members")
     public Map<String, String> addMember(@RequestHeader("Authorization") String authHeader,
                                          @PathVariable Long groupId,
-                                         @RequestBody AddMemberRequest request) {
+                                         @Valid @RequestBody AddMemberRequest request) {
         Long requestingUserId = getUserIdFromToken(authHeader);
         groupService.addMember(groupId, requestingUserId, request.getUserId());
         return Map.of("message", "Member added successfully");
