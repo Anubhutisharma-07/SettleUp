@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    tools {
+        nodejs 'node20'
+    }
+
     stages {
         stage('Checkout') {
             steps {
@@ -32,11 +36,20 @@ pipeline {
                 }
             }
         }
+
+        stage('Build Frontend') {
+            steps {
+                dir('frontend') {
+                    sh 'npm ci'
+                    sh 'npm run build'
+                }
+            }
+        }
     }
 
     post {
         success {
-            echo 'Build and tests passed!'
+            echo 'Backend and frontend built, tests passed!'
         }
         failure {
             echo 'Build or tests failed.'
