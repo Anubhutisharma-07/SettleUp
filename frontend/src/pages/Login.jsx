@@ -16,6 +16,8 @@ import {
   IconArrowLeft,
 } from '../components/Icons';
 
+const MIN_PASSWORD_LENGTH = 8;
+
 const FEATURES = [
   {
     icon: <IconReceipt size={18} />,
@@ -47,6 +49,13 @@ export default function Login({ onNavigate, mode = 'login' }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
+    // Catch the most common signup mistake before sending a request
+    if (isSignup && password.length < MIN_PASSWORD_LENGTH) {
+      setError(`Password must be at least ${MIN_PASSWORD_LENGTH} characters.`);
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -58,6 +67,11 @@ export default function Login({ onNavigate, mode = 'login' }) {
     } finally {
       setLoading(false);
     }
+  };
+
+  const toggleMode = () => {
+    setIsSignup(!isSignup);
+    setError('');
   };
 
   return (
@@ -206,10 +220,16 @@ export default function Login({ onNavigate, mode = 'login' }) {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  minLength={isSignup ? MIN_PASSWORD_LENGTH : undefined}
                   placeholder="••••••••"
                   className="input"
                   autoComplete={isSignup ? 'new-password' : 'current-password'}
                 />
+                {isSignup && (
+                  <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
+                    Use at least {MIN_PASSWORD_LENGTH} characters.
+                  </p>
+                )}
               </div>
 
               {error && <ErrorAlert>{error}</ErrorAlert>}
@@ -235,7 +255,7 @@ export default function Login({ onNavigate, mode = 'login' }) {
               <div className="h-px flex-1 bg-slate-200 dark:bg-slate-800" />
             </div>
 
-            <button onClick={() => setIsSignup(!isSignup)} className="btn-secondary w-full mt-6">
+            <button type="button" onClick={toggleMode} className="btn-secondary w-full mt-6">
               {isSignup ? 'Already have an account? Sign in' : 'New here? Create an account'}
             </button>
           </div>
