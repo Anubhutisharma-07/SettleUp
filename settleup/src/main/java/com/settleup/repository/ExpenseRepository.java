@@ -1,5 +1,6 @@
 package com.settleup.repository;
 
+import com.settleup.dto.ExpenseResponse;
 import com.settleup.entity.Expense;
 import com.settleup.entity.ExpenseSplit;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -63,6 +64,27 @@ public class ExpenseRepository {
     public List<Expense> findByGroupId(Long groupId) {
         String sql = "SELECT * FROM expenses WHERE group_id = ? ORDER BY expense_date DESC";
         return jdbcTemplate.query(sql, expenseRowMapper, groupId);
+    }
+
+    // Same rows as findByGroupId, joined with users so each expense carries the payer's name.
+    public List<ExpenseResponse> findByGroupIdWithNames(Long groupId) {
+        String sql = """
+                SELECT e.id, e.group_id, e.paid_by, u.name AS paid_by_name,
+                       e.amount, e.description, e.expense_date
+                FROM expenses e
+                INNER JOIN users u ON u.id = e.paid_by
+                WHERE e.group_id = ?
+                ORDER BY e.expense_date DESC
+                """;
+        return jdbcTemplate.query(sql, (rs, rowNum) -> new ExpenseResponse(
+                rs.getLong("id"),
+                rs.getLong("group_id"),
+                rs.getLong("paid_by"),
+                rs.getString("paid_by_name"),
+                rs.getBigDecimal("amount"),
+                rs.getString("description"),
+                rs.getTimestamp("expense_date").toLocalDateTime()
+        ), groupId);
     }
 
     public List<ExpenseSplit> findSplitsByExpenseId(Long expenseId) {

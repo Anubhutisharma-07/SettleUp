@@ -2,8 +2,10 @@ package com.settleup.controller;
 
 import com.settleup.dto.AddMemberRequest;
 import com.settleup.dto.CreateGroupRequest;
+import com.settleup.dto.MemberResponse;
 import com.settleup.entity.ExpenseGroup;
-import com.settleup.entity.GroupMember;
+import com.settleup.exception.ForbiddenException;
+import com.settleup.repository.ExpenseGroupRepository;
 import com.settleup.repository.ExpenseRepository;
 import com.settleup.repository.UserRepository;
 import com.settleup.security.JwtUtil;
@@ -11,6 +13,7 @@ import com.settleup.service.ExpenseService;
 import com.settleup.service.GroupService;
 import com.settleup.service.SettlementService;
 import jakarta.validation.Valid;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -25,15 +28,18 @@ public class GroupController {
     private final SettlementService settlementService;
     private final JwtUtil jwtUtil;
     private final UserRepository userRepository;
+    private final ExpenseGroupRepository expenseGroupRepository;
 
     public GroupController(GroupService groupService, ExpenseService expenseService,
                            SettlementService settlementService, JwtUtil jwtUtil,
-                           UserRepository userRepository) {
+                           UserRepository userRepository,
+                           ExpenseGroupRepository expenseGroupRepository) {
         this.groupService = groupService;
         this.expenseService = expenseService;
         this.settlementService = settlementService;
         this.jwtUtil = jwtUtil;
         this.userRepository = userRepository;
+        this.expenseGroupRepository = expenseGroupRepository;
     }
 
     private Long getUserIdFromToken(String authHeader) {
@@ -42,6 +48,19 @@ public class GroupController {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalStateException("User not found"))
                 .getId();
+    }
+
+    // Authorization check: the logged-in user must belong to this group.
+    // The identity comes from the verified JWT (authentication.getName()),
+    // never from anything the client typed.
+    private void requireMember(Authentication authentication, Long groupId) {
+        Long userId = userRepository.findByEmail(authentication.getName())
+                .orElseThrow(() -> new ForbiddenException("Access denied."))
+                .getId();
+
+        if (!expenseGroupRepository.isMember(groupId, userId)) {
+            throw new ForbiddenException("You are not a member of this group.");
+        }
     }
 
     @PostMapping
@@ -67,17 +86,22 @@ public class GroupController {
     }
 
     @GetMapping("/{groupId}/members")
-    public List<GroupMember> getMembers(@PathVariable Long groupId) {
-        return groupService.getGroupMembers(groupId);
+    public List<MemberResponse> getMembers(Authentication authentication, @PathVariable Long groupId) {
+        requireMember(authentication, groupId);
+        return groupService.getGroupMembersWithNames(groupId);
     }
 
     @GetMapping("/{groupId}/balances")
-    public List<ExpenseRepository.UserBalance> getBalances(@PathVariable Long groupId) {
+    public List<ExpenseRepository.UserBalance> getBalances(Authentication authentication,
+                                                           @PathVariable Long groupId) {
+        requireMember(authentication, groupId);
         return expenseService.getBalances(groupId);
     }
 
     @GetMapping("/{groupId}/settlements")
-    public List<SettlementService.Transaction> getSettlement(@PathVariable Long groupId) {
+    public List<SettlementService.Transaction> getSettlement(Authentication authentication,
+                                                             @PathVariable Long groupId) {
+        requireMember(authentication, groupId);
         return settlementService.computeSettlement(groupId);
     }
 }

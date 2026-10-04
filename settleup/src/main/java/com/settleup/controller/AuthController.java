@@ -6,6 +6,8 @@ import com.settleup.entity.User;
 import com.settleup.security.JwtUtil;
 import com.settleup.service.UserService;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -47,14 +49,17 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public Map<String, Object> login(@RequestBody LoginRequest request) {
+    public ResponseEntity<Map<String, Object>> login(@RequestBody LoginRequest request) {
         Optional<User> userOpt = userService.validateLogin(request.getEmail(), request.getPassword());
 
         Map<String, Object> response = new HashMap<>();
 
         if (userOpt.isEmpty()) {
+            // 401 = "we don't know who you are". The same message is used for an unknown
+            // email and a wrong password, so an attacker can't tell which emails exist.
             response.put("error", "Invalid email or password");
-            return response;
+            response.put("message", "Invalid email or password");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
         }
 
         User user = userOpt.get();
@@ -65,6 +70,6 @@ public class AuthController {
         response.put("name", user.getName());
         response.put("email", user.getEmail());
 
-        return response;
+        return ResponseEntity.ok(response);
     }
 }

@@ -1,5 +1,6 @@
 package com.settleup.service;
 
+import com.settleup.dto.MemberResponse;
 import com.settleup.entity.ExpenseGroup;
 import com.settleup.entity.GroupMember;
 import com.settleup.repository.ExpenseGroupRepository;
@@ -52,5 +53,9 @@ public class GroupService {
 
     public List<GroupMember> getGroupMembers(Long groupId) {
         return memberRepository.findByGroupId(groupId);
+    }
+
+    public List<MemberResponse> getGroupMembersWithNames(Long groupId) {
+        return memberRepository.findMembersWithNames(groupId);
     }
 }

@@ -1,5 +1,6 @@
 package com.settleup.repository;
 
+import com.settleup.dto.MemberResponse;
 import com.settleup.entity.GroupMember;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -32,6 +33,26 @@ public class GroupMemberRepository {
     public List<GroupMember> findByGroupId(Long groupId) {
         String sql = "SELECT * FROM group_members WHERE group_id = ?";
         return jdbcTemplate.query(sql, memberRowMapper, groupId);
+    }
+
+    // Same rows as findByGroupId, but joined with users so each member carries a real name.
+    // Note: we select u.name only, never u.password or u.email.
+    public List<MemberResponse> findMembersWithNames(Long groupId) {
+        String sql = """
+                SELECT gm.id, gm.group_id, gm.user_id, u.name AS user_name, gm.role, gm.joined_at
+                FROM group_members gm
+                INNER JOIN users u ON u.id = gm.user_id
+                WHERE gm.group_id = ?
+                ORDER BY gm.joined_at
+                """;
+        return jdbcTemplate.query(sql, (rs, rowNum) -> new MemberResponse(
+                rs.getLong("id"),
+                rs.getLong("group_id"),
+                rs.getLong("user_id"),
+                rs.getString("user_name"),
+                GroupMember.Role.valueOf(rs.getString("role")),
+                rs.getTimestamp("joined_at").toLocalDateTime()
+        ), groupId);
     }
 
     public boolean isMember(Long groupId, Long userId) {
