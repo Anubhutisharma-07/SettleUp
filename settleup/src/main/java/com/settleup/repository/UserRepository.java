@@ -1,5 +1,6 @@
 package com.settleup.repository;
 
+import com.settleup.dto.UserSearchResult;
 import com.settleup.entity.User;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -67,5 +68,33 @@ public class UserRepository {
         String sql = "SELECT COUNT(*) FROM users";
         Integer count = jdbcTemplate.queryForObject(sql, Integer.class);
         return count != null ? count : 0;
+    }
+
+    // Finds users whose name contains the typed text (case-insensitive), skipping
+    // anyone already in the group. At most 8 results.
+    // The typed text is passed as a ? parameter, never joined into the SQL string.
+    // We also escape % and _ (LIKE wildcards) so they match literally.
+    public List<UserSearchResult> searchUsersNotInGroup(String text, Long groupId) {
+        String escaped = text
+                .replace("\\", "\\\\")
+                .replace("%", "\\%")
+                .replace("_", "\\_");
+        String pattern = "%" + escaped + "%";
+
+        String sql = """
+                SELECT u.id, u.name
+                FROM users u
+                WHERE u.name ILIKE ? ESCAPE '\\'
+                  AND NOT EXISTS (
+                      SELECT 1 FROM group_members gm
+                      WHERE gm.group_id = ? AND gm.user_id = u.id
+                  )
+                ORDER BY u.name
+                LIMIT 8
+                """;
+
+        return jdbcTemplate.query(sql,
+                (rs, rowNum) -> new UserSearchResult(rs.getLong("id"), rs.getString("name")),
+                pattern, groupId);
     }
 }
