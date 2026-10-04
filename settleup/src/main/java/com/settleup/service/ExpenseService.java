@@ -1,5 +1,6 @@
 package com.settleup.service;
 
+import com.settleup.dto.ExpenseResponse;
 import com.settleup.entity.Expense;
 import com.settleup.entity.ExpenseSplit;
 import com.settleup.repository.ExpenseRepository;
@@ -63,6 +64,10 @@ public class ExpenseService {
 
     public List<Expense> getExpensesForGroup(Long groupId) {
         return expenseRepository.findByGroupId(groupId);
+    }
+
+    public List<ExpenseResponse> getExpensesWithNames(Long groupId) {
+        return expenseRepository.findByGroupIdWithNames(groupId);
     }
 
     public List<ExpenseRepository.UserBalance> getBalances(Long groupId) {

@@ -2,8 +2,8 @@ package com.settleup.controller;
 
 import com.settleup.dto.AddMemberRequest;
 import com.settleup.dto.CreateGroupRequest;
+import com.settleup.dto.MemberResponse;
 import com.settleup.entity.ExpenseGroup;
-import com.settleup.entity.GroupMember;
 import com.settleup.exception.ForbiddenException;
 import com.settleup.repository.ExpenseGroupRepository;
 import com.settleup.repository.ExpenseRepository;
@@ -86,9 +86,9 @@ public class GroupController {
     }
 
     @GetMapping("/{groupId}/members")
-    public List<GroupMember> getMembers(Authentication authentication, @PathVariable Long groupId) {
+    public List<MemberResponse> getMembers(Authentication authentication, @PathVariable Long groupId) {
         requireMember(authentication, groupId);
-        return groupService.getGroupMembers(groupId);
+        return groupService.getGroupMembersWithNames(groupId);
     }
 
     @GetMapping("/{groupId}/balances")

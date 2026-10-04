@@ -1,6 +1,7 @@
 package com.settleup.controller;
 
 import com.settleup.dto.AddExpenseRequest;
+import com.settleup.dto.ExpenseResponse;
 import com.settleup.entity.Expense;
 import com.settleup.exception.ForbiddenException;
 import com.settleup.repository.ExpenseGroupRepository;
@@ -50,8 +51,8 @@ public class ExpenseController {
     }
 
     @GetMapping
-    public List<Expense> getExpenses(Authentication authentication, @PathVariable Long groupId) {
+    public List<ExpenseResponse> getExpenses(Authentication authentication, @PathVariable Long groupId) {
         requireMember(authentication, groupId);
-        return expenseService.getExpensesForGroup(groupId);
+        return expenseService.getExpensesWithNames(groupId);
     }
 }
