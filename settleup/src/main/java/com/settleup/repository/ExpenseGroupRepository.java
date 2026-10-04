@@ -58,4 +58,12 @@ public class ExpenseGroupRepository {
                 """;
         return jdbcTemplate.query(sql, groupRowMapper, userId);
     }
+
+    // True if this user is a member of this group. Both values are bound as ?
+    // parameters, never concatenated into the SQL string.
+    public boolean isMember(Long groupId, Long userId) {
+        String sql = "SELECT COUNT(*) FROM group_members WHERE group_id = ? AND user_id = ?";
+        Integer count = jdbcTemplate.queryForObject(sql, Integer.class, groupId, userId);
+        return count != null && count > 0;
+    }
 }
