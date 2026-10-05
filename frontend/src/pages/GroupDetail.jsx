@@ -82,6 +82,9 @@ export default function GroupDetail({ groupId, group, onBack, initialTab = 'expe
   const totalSpent = expenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
   const unpaidCount = settlements.filter((s) => Number(s.amount) > 0.005).length;
 
+  /* Non-members get a dedicated, friendly state instead of empty tabs. */
+  const isNotMember = /not a member/i.test(error);
+
   return (
     <div className="min-h-screen bg-slate-100 dark:bg-slate-950">
       {/* Header */}
@@ -111,7 +114,7 @@ export default function GroupDetail({ groupId, group, onBack, initialTab = 'expe
       </header>
 
       <main className="max-w-3xl mx-auto px-4 sm:px-6 py-6 animate-fade-up">
-        {error && (
+        {error && !isNotMember && (
           <div className="mb-5 flex flex-wrap items-center gap-3">
             <ErrorAlert>{error}</ErrorAlert>
             <button onClick={loadAll} className="btn-secondary !py-2">
@@ -178,6 +181,12 @@ export default function GroupDetail({ groupId, group, onBack, initialTab = 'expe
                 </div>
               ))}
             </div>
+          ) : isNotMember ? (
+            <EmptyState
+              icon={<IconAlert size={28} />}
+              title="You are not a member of this group"
+              text="Ask a group admin to add you, then come back and refresh."
+            />
           ) : (
             <>
               {activeTab === 'expenses' && (
