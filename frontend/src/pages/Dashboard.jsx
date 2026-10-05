@@ -178,7 +178,7 @@ export default function Dashboard({ onNavigate, onSelectGroup }) {
         group: g.name,
         text: exp.description,
         amount: Number(exp.amount) || 0,
-        byId: exp.paidBy,
+        byName: exp.paidByName,
         date: exp.expenseDate ? new Date(exp.expenseDate).getTime() : 0,
       });
     });
@@ -698,7 +698,7 @@ export default function Dashboard({ onNavigate, onSelectGroup }) {
                       <div className="flex-1 min-w-0">
                         {ev.kind === 'expense' ? (
                           <p className="text-sm text-slate-700 dark:text-slate-200 truncate">
-                            Member #{ev.byId} added <span className="font-semibold">{ev.text}</span>
+                            {ev.byName || 'Someone'} added <span className="font-semibold">{ev.text}</span>
                             <span className="text-slate-400 dark:text-slate-500"> · {ev.group}</span>
                           </p>
                         ) : (

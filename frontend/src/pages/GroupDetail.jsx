@@ -179,7 +179,7 @@ export default function GroupDetail({ groupId, group, onBack, initialTab = 'expe
           ) : (
             <>
               {activeTab === 'expenses' && (
-                <ExpensesTab groupId={groupId} expenses={expenses} members={members} onAdded={loadAll} />
+                <ExpensesTab groupId={groupId} expenses={expenses} onAdded={loadAll} />
               )}
               {activeTab === 'members' && <MembersTab groupId={groupId} members={members} balances={balances} onAdded={loadAll} />}
               {activeTab === 'balances' && <BalancesTab balances={balances} />}
@@ -194,17 +194,12 @@ export default function GroupDetail({ groupId, group, onBack, initialTab = 'expe
 
 /* ------------------------------ Expenses ---------------------------------- */
 
-function ExpensesTab({ groupId, expenses, members, onAdded }) {
+function ExpensesTab({ groupId, expenses, onAdded }) {
   const { auth } = useAuth();
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
-
-  const memberNameById = {};
-  members.forEach((m) => {
-    memberNameById[m.userId] = `User #${m.userId}`;
-  });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -274,13 +269,13 @@ function ExpensesTab({ groupId, expenses, members, onAdded }) {
           {expenses.map((exp) => (
             <div key={exp.id} className="group/row flex items-center gap-3.5 px-4 sm:px-5 py-4 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
               <span className="transition-transform duration-200 group-hover/row:scale-110">
-                <Avatar id={exp.paidBy} name={`User ${exp.paidBy}`} size="md" />
+                <Avatar id={exp.paidBy} name={exp.paidByName} size="md" />
               </span>
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-slate-900 dark:text-white truncate">{exp.description}</p>
                 <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5 flex items-center gap-1.5">
                   <span className="font-medium text-slate-500 dark:text-slate-400">
-                    {memberNameById[exp.paidBy] || `User #${exp.paidBy}`}
+                    {exp.paidByName}
                   </span>
                   {formatDate(exp.expenseDate) && (
                     <>
