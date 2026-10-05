@@ -4,6 +4,7 @@ import { useAuth } from '../AuthContext';
 import ThemeToggle from '../components/ThemeToggle';
 import Avatar from '../components/Avatar';
 import ErrorAlert from '../components/ErrorAlert';
+import ProfileMenu from '../components/ProfileMenu';
 import { formatMoney, initialsOf } from '../utils/format';
 import {
   IconPlus,
@@ -109,6 +110,7 @@ export default function GroupDetail({ groupId, group, onBack, initialTab = 'expe
           </div>
           <div className="flex items-center gap-2">
             <ThemeToggle />
+            <ProfileMenu />
           </div>
         </div>
       </header>

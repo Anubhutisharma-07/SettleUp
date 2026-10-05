@@ -30,6 +30,8 @@ export const api = {
       body: JSON.stringify({ email, password }),
     }),
 
+  getMe: (token) => request('/api/users/me', {}, token),
+
   getGroups: (token) => request('/api/groups', {}, token),
 
   createGroup: (name, token) =>
