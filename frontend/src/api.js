@@ -40,6 +40,9 @@ export const api = {
   addMember: (groupId, userId, token) =>
     request(`/api/groups/${groupId}/members`, { method: 'POST', body: JSON.stringify({ userId }) }, token),
 
+  searchUsers: (q, groupId, token) =>
+    request(`/api/users/search?q=${encodeURIComponent(q)}&groupId=${groupId}`, {}, token),
+
   getExpenses: (groupId, token) => request(`/api/groups/${groupId}/expenses`, {}, token),
 
   addExpense: (groupId, amount, description, token) =>

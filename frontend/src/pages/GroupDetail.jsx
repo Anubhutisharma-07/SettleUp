@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { api } from '../api';
 import { useAuth } from '../AuthContext';
 import ThemeToggle from '../components/ThemeToggle';
@@ -17,6 +17,8 @@ import {
   IconClock,
   IconHandshake,
   IconAlert,
+  IconSearch,
+  IconUserPlus,
 } from '../components/Icons';
 
 const TAB_ICONS = {
@@ -181,7 +183,9 @@ export default function GroupDetail({ groupId, group, onBack, initialTab = 'expe
               {activeTab === 'expenses' && (
                 <ExpensesTab groupId={groupId} expenses={expenses} onAdded={loadAll} />
               )}
-              {activeTab === 'members' && <MembersTab groupId={groupId} members={members} balances={balances} onAdded={loadAll} />}
+              {activeTab === 'members' && (
+                <MembersTab groupId={groupId} members={members} balances={balances} onAdded={loadAll} />
+              )}
               {activeTab === 'balances' && <BalancesTab balances={balances} />}
               {activeTab === 'settlements' && <SettlementsTab settlements={settlements} />}
             </>
@@ -302,52 +306,15 @@ function ExpensesTab({ groupId, expenses, onAdded }) {
 
 function MembersTab({ groupId, members, balances = [], onAdded }) {
   const { auth } = useAuth();
-  const [userId, setUserId] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState('');
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setSubmitting(true);
-    setError('');
-    try {
-      await api.addMember(groupId, parseInt(userId, 10), auth.token);
-      setUserId('');
-      onAdded();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setSubmitting(false);
-    }
-  };
+  /* The add-member search is only for admins of this group. */
+  const isAdmin = members.some(
+    (m) => Number(m.userId) === Number(auth.userId) && m.role === 'ADMIN'
+  );
 
   return (
     <div>
-      <form onSubmit={handleSubmit} className="card p-4 sm:p-5 mb-5">
-        <p className="text-sm font-bold text-slate-900 dark:text-white mb-3 flex items-center gap-1.5">
-          <IconUsers size={15} className="text-brand-500" /> Add a member
-        </p>
-        <div className="flex flex-col sm:flex-row gap-2.5">
-          <input
-            type="number"
-            min="1"
-            value={userId}
-            onChange={(e) => setUserId(e.target.value)}
-            placeholder="Enter the user's ID"
-            required
-            className="input flex-1"
-          />
-          <button type="submit" disabled={submitting} className="btn-primary shrink-0">
-            {submitting ? <IconSpinner size={16} /> : <IconUsers size={16} />}
-            {submitting ? 'Adding…' : 'Add member'}
-          </button>
-        </div>
-        {error && (
-          <div className="mt-3">
-            <ErrorAlert>{error}</ErrorAlert>
-          </div>
-        )}
-      </form>
+      {isAdmin && <AddMemberSearch groupId={groupId} onAdded={onAdded} />}
 
       <div className="card divide-y divide-slate-100 dark:divide-slate-800 overflow-hidden">
         {members.map((m) => {
@@ -384,6 +351,146 @@ function MembersTab({ groupId, members, balances = [], onAdded }) {
           );
         })}
       </div>
+    </div>
+  );
+}
+
+/* --------------------------- Add member search ----------------------------- */
+
+const SEARCH_MIN_CHARS = 3;
+
+function AddMemberSearch({ groupId, onAdded }) {
+  const { auth } = useAuth();
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState([]);
+  const [searching, setSearching] = useState(false);
+  const [notice, setNotice] = useState('');
+  const [noticeIsError, setNoticeIsError] = useState(false);
+  const [addingId, setAddingId] = useState(null);
+  const [error, setError] = useState('');
+  const seqRef = useRef(0);
+  const debounceRef = useRef(null);
+
+  /* Debounced name search: only query at 3+ characters, keep the latest answer. */
+  useEffect(() => {
+    const trimmed = query.trim();
+    setResults([]);
+    setNotice('');
+    setNoticeIsError(false);
+    if (trimmed.length < SEARCH_MIN_CHARS) {
+      setSearching(false);
+      return undefined;
+    }
+    setSearching(true);
+    const seq = ++seqRef.current;
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const found = await api.searchUsers(trimmed, groupId, auth.token);
+        if (seqRef.current !== seq) return; // a newer query superseded this one
+        const list = Array.isArray(found) ? found.slice(0, 8) : [];
+        setResults(list);
+        if (list.length === 0) {
+          setNotice('No people found with that name.');
+        }
+      } catch (err) {
+        if (seqRef.current !== seq) return;
+        setResults([]);
+        setNotice(
+          err.message === 'Failed to fetch'
+            ? 'Could not reach the server. Check your connection and try again.'
+            : err.message || 'Something went wrong while searching. Please try again.'
+        );
+        setNoticeIsError(true);
+      } finally {
+        if (seqRef.current === seq) setSearching(false);
+      }
+    }, 300);
+    return () => clearTimeout(debounceRef.current);
+  }, [query, groupId, auth.token]);
+
+  const handleAdd = async (person) => {
+    setAddingId(person.id);
+    setError('');
+    try {
+      await api.addMember(groupId, person.id, auth.token);
+      setQuery('');
+      setResults([]);
+      setNotice('');
+      onAdded();
+    } catch (err) {
+      setError(err.message || 'Could not add that person. Please try again.');
+    } finally {
+      setAddingId(null);
+    }
+  };
+
+  const trimmed = query.trim();
+
+  return (
+    <div className="card p-4 sm:p-5 mb-5">
+      <p className="text-sm font-bold text-slate-900 dark:text-white mb-3 flex items-center gap-1.5">
+        <IconUserPlus size={15} className="text-brand-500" /> Add a member
+      </p>
+      <div className="relative">
+        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
+          <IconSearch size={15} />
+        </span>
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search people by name"
+          autoComplete="off"
+          className="input !pl-9"
+          aria-label="Search people by name to add them to the group"
+        />
+      </div>
+      {searching && (
+        <p className="mt-2.5 text-xs font-medium text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
+          <IconSpinner size={13} /> Searching…
+        </p>
+      )}
+      {!searching && trimmed.length > 0 && trimmed.length < SEARCH_MIN_CHARS && (
+        <p className="mt-2.5 text-xs text-slate-400 dark:text-slate-500">
+          Keep typing — at least {SEARCH_MIN_CHARS} characters.
+        </p>
+      )}
+      {!searching && notice && noticeIsError && (
+        <div className="mt-2.5">
+          <ErrorAlert>{notice}</ErrorAlert>
+        </div>
+      )}
+      {!searching && notice && !noticeIsError && (
+        <p className="mt-2.5 text-xs text-slate-400 dark:text-slate-500">{notice}</p>
+      )}
+      {results.length > 0 && (
+        <div className="mt-2.5 rounded-xl border border-slate-200 dark:border-slate-800 divide-y divide-slate-100 dark:divide-slate-800 overflow-hidden">
+          {results.map((person) => (
+            <button
+              key={person.id}
+              type="button"
+              onClick={() => handleAdd(person)}
+              disabled={addingId !== null}
+              className="w-full flex items-center gap-3 px-3.5 py-2.5 text-left hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors disabled:opacity-60"
+            >
+              <Avatar id={person.id} name={person.name} size="sm" />
+              <span className="flex-1 text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">
+                {person.name}
+              </span>
+              {addingId === person.id ? (
+                <IconSpinner size={15} className="text-brand-500" />
+              ) : (
+                <IconUserPlus size={15} className="text-brand-500 shrink-0" />
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+      {error && (
+        <div className="mt-2.5">
+          <ErrorAlert>{error}</ErrorAlert>
+        </div>
+      )}
     </div>
   );
 }
