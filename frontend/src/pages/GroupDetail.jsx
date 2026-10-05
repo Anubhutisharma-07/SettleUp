@@ -360,8 +360,8 @@ function MembersTab({ groupId, members, balances = [], onAdded }) {
           const net = bal ? Number(bal.netBalance) || 0 : null;
           return (
             <div key={m.id} className="group/mem flex items-center gap-3.5 px-4 sm:px-5 py-4">
-              <Avatar id={m.userId} name={`User ${m.userId}`} size="md" />
-              <span className="flex-1 font-semibold text-slate-900 dark:text-white">User #{m.userId}</span>
+              <Avatar id={m.userId} name={m.userName} size="md" />
+              <span className="flex-1 font-semibold text-slate-900 dark:text-white">{m.userName}</span>
               {net !== null && (
                 <span
                   className={`hidden sm:inline-block text-xs font-mono font-bold px-2.5 py-1 rounded-full opacity-0 translate-x-1 group-hover/mem:opacity-100 group-hover/mem:translate-x-0 focus-within:opacity-100 transition-all duration-200 ${
