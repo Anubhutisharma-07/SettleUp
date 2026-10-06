@@ -349,15 +349,15 @@ function MembersTab({ groupId, members, balances = [], onAdded }) {
                   {formatMoney(Math.abs(net))}
                 </span>
               )}
-            {m.role === 'ADMIN' ? (
-              <span className="text-[11px] font-bold uppercase tracking-wider text-brand-700 dark:text-brand-300 bg-brand-100 dark:bg-brand-900/40 px-2.5 py-1 rounded-full">
-                Admin
-              </span>
-            ) : (
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-full">
-                Member
-              </span>
-            )}
+              {m.role === 'ADMIN' ? (
+                <span className="text-[11px] font-bold uppercase tracking-wider text-brand-700 dark:text-brand-300 bg-brand-100 dark:bg-brand-900/40 px-2.5 py-1 rounded-full">
+                  Admin
+                </span>
+              ) : (
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-full">
+                  Member
+                </span>
+              )}
             </div>
           );
         })}
@@ -385,6 +385,9 @@ function AddMemberSearch({ groupId, onAdded }) {
   /* Debounced name search: only query at 3+ characters, keep the latest answer. */
   useEffect(() => {
     const trimmed = query.trim();
+    // Bump the counter first, so any request already in flight is ignored
+    // even when the user has deleted back below the minimum length.
+    const seq = ++seqRef.current;
     setResults([]);
     setNotice('');
     setNoticeIsError(false);
@@ -393,7 +396,6 @@ function AddMemberSearch({ groupId, onAdded }) {
       return undefined;
     }
     setSearching(true);
-    const seq = ++seqRef.current;
     debounceRef.current = setTimeout(async () => {
       try {
         const found = await api.searchUsers(trimmed, groupId, auth.token);
