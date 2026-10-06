@@ -15,4 +15,8 @@ FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "app.jar"]
+
+# Memory flags for small hosts (Render free tier = 512 MB):
+#  - use up to 70% of the container's RAM for the heap instead of the default 25%
+#  - the serial GC uses less memory than the default one on small containers
+ENTRYPOINT ["java", "-XX:MaxRAMPercentage=70", "-XX:+UseSerialGC", "-jar", "app.jar"]
