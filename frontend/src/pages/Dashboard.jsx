@@ -8,13 +8,13 @@ import Modal from '../components/Modal';
 import ErrorAlert from '../components/ErrorAlert';
 import BrandMark from '../components/BrandMark';
 import NetworkGraph from '../components/NetworkGraph';
+import ProfileMenu from '../components/ProfileMenu';
 import { AnimatedValue, FlowRing } from '../components/motion';
 import { formatMoney } from '../utils/format';
 import {
   IconPlus,
   IconChevronRight,
   IconSearch,
-  IconLogout,
   IconUsers,
   IconWallet,
   IconSpinner,
@@ -53,7 +53,7 @@ function FlowArrow() {
 
 export default function Dashboard({ onNavigate, onSelectGroup }) {
   /* onSelectGroup(group, tab?) — optional tab: 'settlements' | 'balances' | ... */
-  const { auth, logout } = useAuth();
+  const { auth } = useAuth();
 
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -178,7 +178,7 @@ export default function Dashboard({ onNavigate, onSelectGroup }) {
         group: g.name,
         text: exp.description,
         amount: Number(exp.amount) || 0,
-        byId: exp.paidBy,
+        byName: exp.paidByName,
         date: exp.expenseDate ? new Date(exp.expenseDate).getTime() : 0,
       });
     });
@@ -236,11 +236,6 @@ export default function Dashboard({ onNavigate, onSelectGroup }) {
     }
   };
 
-  const handleLogout = () => {
-    logout();
-    onNavigate('login');
-  };
-
   const filtered = groups.filter((g) => g.name && g.name.toLowerCase().includes(query.trim().toLowerCase()));
 
   return (
@@ -251,20 +246,9 @@ export default function Dashboard({ onNavigate, onSelectGroup }) {
           <Logo />
           <div className="flex items-center gap-2 sm:gap-3">
             <ThemeToggle />
-            <div className="hidden sm:flex items-center gap-2.5 pl-2 border-l border-slate-200 dark:border-slate-700">
-              <Avatar id={auth.userId} name={auth.name} size="sm" />
-              <span className="text-sm font-semibold text-slate-800 dark:text-slate-100 max-w-[10rem] truncate">
-                {auth.name}
-              </span>
+            <div className="pl-1 sm:pl-2 sm:border-l border-slate-200 dark:border-slate-700">
+              <ProfileMenu onAfterLogout={() => onNavigate('login')} />
             </div>
-            <button
-              onClick={handleLogout}
-              className="inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-semibold text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors"
-              title="Sign out"
-            >
-              <IconLogout size={16} />
-              <span className="hidden sm:inline">Sign out</span>
-            </button>
           </div>
         </div>
       </header>
@@ -698,7 +682,7 @@ export default function Dashboard({ onNavigate, onSelectGroup }) {
                       <div className="flex-1 min-w-0">
                         {ev.kind === 'expense' ? (
                           <p className="text-sm text-slate-700 dark:text-slate-200 truncate">
-                            Member #{ev.byId} added <span className="font-semibold">{ev.text}</span>
+                            {ev.byName || 'Someone'} added <span className="font-semibold">{ev.text}</span>
                             <span className="text-slate-400 dark:text-slate-500"> · {ev.group}</span>
                           </p>
                         ) : (

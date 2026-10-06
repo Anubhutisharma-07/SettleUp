@@ -1,4 +1,6 @@
-const BASE_URL = 'http://localhost:8080';
+// In production, set REACT_APP_API_URL (e.g. https://settleup-api.onrender.com) at BUILD time.
+// Locally it falls back to the backend on port 8080. Trailing slashes are removed.
+const BASE_URL = (process.env.REACT_APP_API_URL || 'http://localhost:8080').replace(/\/+$/, '');
 
 async function request(path, options = {}, token = null) {
   const headers = {
@@ -11,7 +13,7 @@ async function request(path, options = {}, token = null) {
 
   if (!response.ok) {
     const errorBody = await response.json().catch(() => ({}));
-    throw new Error(errorBody.error || `Request failed: ${response.status}`);
+    throw new Error(errorBody.error || errorBody.message || `Request failed: ${response.status}`);
   }
 
   return response.json();
@@ -30,6 +32,8 @@ export const api = {
       body: JSON.stringify({ email, password }),
     }),
 
+  getMe: (token) => request('/api/users/me', {}, token),
+
   getGroups: (token) => request('/api/groups', {}, token),
 
   createGroup: (name, token) =>
@@ -39,6 +43,9 @@ export const api = {
 
   addMember: (groupId, userId, token) =>
     request(`/api/groups/${groupId}/members`, { method: 'POST', body: JSON.stringify({ userId }) }, token),
+
+  searchUsers: (q, groupId, token) =>
+    request(`/api/users/search?q=${encodeURIComponent(q)}&groupId=${groupId}`, {}, token),
 
   getExpenses: (groupId, token) => request(`/api/groups/${groupId}/expenses`, {}, token),
 

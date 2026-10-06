@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { api } from '../api';
 import { useAuth } from '../AuthContext';
 import ThemeToggle from '../components/ThemeToggle';
 import Avatar from '../components/Avatar';
 import ErrorAlert from '../components/ErrorAlert';
+import ProfileMenu from '../components/ProfileMenu';
 import { formatMoney, initialsOf } from '../utils/format';
 import {
   IconPlus,
@@ -17,6 +18,8 @@ import {
   IconClock,
   IconHandshake,
   IconAlert,
+  IconSearch,
+  IconUserPlus,
 } from '../components/Icons';
 
 const TAB_ICONS = {
@@ -80,6 +83,9 @@ export default function GroupDetail({ groupId, group, onBack, initialTab = 'expe
   const totalSpent = expenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
   const unpaidCount = settlements.filter((s) => Number(s.amount) > 0.005).length;
 
+  /* Non-members get a dedicated, friendly state instead of empty tabs. */
+  const isNotMember = /not a member/i.test(error);
+
   return (
     <div className="min-h-screen bg-slate-100 dark:bg-slate-950">
       {/* Header */}
@@ -104,12 +110,13 @@ export default function GroupDetail({ groupId, group, onBack, initialTab = 'expe
           </div>
           <div className="flex items-center gap-2">
             <ThemeToggle />
+            <ProfileMenu />
           </div>
         </div>
       </header>
 
       <main className="max-w-3xl mx-auto px-4 sm:px-6 py-6 animate-fade-up">
-        {error && (
+        {error && !isNotMember && (
           <div className="mb-5 flex flex-wrap items-center gap-3">
             <ErrorAlert>{error}</ErrorAlert>
             <button onClick={loadAll} className="btn-secondary !py-2">
@@ -176,12 +183,20 @@ export default function GroupDetail({ groupId, group, onBack, initialTab = 'expe
                 </div>
               ))}
             </div>
+          ) : isNotMember ? (
+            <EmptyState
+              icon={<IconAlert size={28} />}
+              title="You are not a member of this group"
+              text="Ask a group admin to add you, then come back and refresh."
+            />
           ) : (
             <>
               {activeTab === 'expenses' && (
-                <ExpensesTab groupId={groupId} expenses={expenses} members={members} onAdded={loadAll} />
+                <ExpensesTab groupId={groupId} expenses={expenses} onAdded={loadAll} />
               )}
-              {activeTab === 'members' && <MembersTab groupId={groupId} members={members} balances={balances} onAdded={loadAll} />}
+              {activeTab === 'members' && (
+                <MembersTab groupId={groupId} members={members} balances={balances} onAdded={loadAll} />
+              )}
               {activeTab === 'balances' && <BalancesTab balances={balances} />}
               {activeTab === 'settlements' && <SettlementsTab settlements={settlements} />}
             </>
@@ -194,17 +209,12 @@ export default function GroupDetail({ groupId, group, onBack, initialTab = 'expe
 
 /* ------------------------------ Expenses ---------------------------------- */
 
-function ExpensesTab({ groupId, expenses, members, onAdded }) {
+function ExpensesTab({ groupId, expenses, onAdded }) {
   const { auth } = useAuth();
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
-
-  const memberNameById = {};
-  members.forEach((m) => {
-    memberNameById[m.userId] = `User #${m.userId}`;
-  });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -274,13 +284,13 @@ function ExpensesTab({ groupId, expenses, members, onAdded }) {
           {expenses.map((exp) => (
             <div key={exp.id} className="group/row flex items-center gap-3.5 px-4 sm:px-5 py-4 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
               <span className="transition-transform duration-200 group-hover/row:scale-110">
-                <Avatar id={exp.paidBy} name={`User ${exp.paidBy}`} size="md" />
+                <Avatar id={exp.paidBy} name={exp.paidByName} size="md" />
               </span>
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-slate-900 dark:text-white truncate">{exp.description}</p>
                 <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5 flex items-center gap-1.5">
                   <span className="font-medium text-slate-500 dark:text-slate-400">
-                    {memberNameById[exp.paidBy] || `User #${exp.paidBy}`}
+                    {exp.paidByName}
                   </span>
                   {formatDate(exp.expenseDate) && (
                     <>
@@ -307,52 +317,15 @@ function ExpensesTab({ groupId, expenses, members, onAdded }) {
 
 function MembersTab({ groupId, members, balances = [], onAdded }) {
   const { auth } = useAuth();
-  const [userId, setUserId] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState('');
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setSubmitting(true);
-    setError('');
-    try {
-      await api.addMember(groupId, parseInt(userId, 10), auth.token);
-      setUserId('');
-      onAdded();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setSubmitting(false);
-    }
-  };
+  /* The add-member search is only for admins of this group. */
+  const isAdmin = members.some(
+    (m) => Number(m.userId) === Number(auth.userId) && m.role === 'ADMIN'
+  );
 
   return (
     <div>
-      <form onSubmit={handleSubmit} className="card p-4 sm:p-5 mb-5">
-        <p className="text-sm font-bold text-slate-900 dark:text-white mb-3 flex items-center gap-1.5">
-          <IconUsers size={15} className="text-brand-500" /> Add a member
-        </p>
-        <div className="flex flex-col sm:flex-row gap-2.5">
-          <input
-            type="number"
-            min="1"
-            value={userId}
-            onChange={(e) => setUserId(e.target.value)}
-            placeholder="Enter the user's ID"
-            required
-            className="input flex-1"
-          />
-          <button type="submit" disabled={submitting} className="btn-primary shrink-0">
-            {submitting ? <IconSpinner size={16} /> : <IconUsers size={16} />}
-            {submitting ? 'Adding…' : 'Add member'}
-          </button>
-        </div>
-        {error && (
-          <div className="mt-3">
-            <ErrorAlert>{error}</ErrorAlert>
-          </div>
-        )}
-      </form>
+      {isAdmin && <AddMemberSearch groupId={groupId} onAdded={onAdded} />}
 
       <div className="card divide-y divide-slate-100 dark:divide-slate-800 overflow-hidden">
         {members.map((m) => {
@@ -360,8 +333,8 @@ function MembersTab({ groupId, members, balances = [], onAdded }) {
           const net = bal ? Number(bal.netBalance) || 0 : null;
           return (
             <div key={m.id} className="group/mem flex items-center gap-3.5 px-4 sm:px-5 py-4">
-              <Avatar id={m.userId} name={`User ${m.userId}`} size="md" />
-              <span className="flex-1 font-semibold text-slate-900 dark:text-white">User #{m.userId}</span>
+              <Avatar id={m.userId} name={m.userName} size="md" />
+              <span className="flex-1 font-semibold text-slate-900 dark:text-white">{m.userName}</span>
               {net !== null && (
                 <span
                   className={`hidden sm:inline-block text-xs font-mono font-bold px-2.5 py-1 rounded-full opacity-0 translate-x-1 group-hover/mem:opacity-100 group-hover/mem:translate-x-0 focus-within:opacity-100 transition-all duration-200 ${
@@ -376,19 +349,161 @@ function MembersTab({ groupId, members, balances = [], onAdded }) {
                   {formatMoney(Math.abs(net))}
                 </span>
               )}
-            {m.role === 'ADMIN' ? (
-              <span className="text-[11px] font-bold uppercase tracking-wider text-brand-700 dark:text-brand-300 bg-brand-100 dark:bg-brand-900/40 px-2.5 py-1 rounded-full">
-                Admin
-              </span>
-            ) : (
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-full">
-                Member
-              </span>
-            )}
+              {m.role === 'ADMIN' ? (
+                <span className="text-[11px] font-bold uppercase tracking-wider text-brand-700 dark:text-brand-300 bg-brand-100 dark:bg-brand-900/40 px-2.5 py-1 rounded-full">
+                  Admin
+                </span>
+              ) : (
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-full">
+                  Member
+                </span>
+              )}
             </div>
           );
         })}
       </div>
+    </div>
+  );
+}
+
+/* --------------------------- Add member search ----------------------------- */
+
+const SEARCH_MIN_CHARS = 3;
+
+function AddMemberSearch({ groupId, onAdded }) {
+  const { auth } = useAuth();
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState([]);
+  const [searching, setSearching] = useState(false);
+  const [notice, setNotice] = useState('');
+  const [noticeIsError, setNoticeIsError] = useState(false);
+  const [addingId, setAddingId] = useState(null);
+  const [error, setError] = useState('');
+  const seqRef = useRef(0);
+  const debounceRef = useRef(null);
+
+  /* Debounced name search: only query at 3+ characters, keep the latest answer. */
+  useEffect(() => {
+    const trimmed = query.trim();
+    // Bump the counter first, so any request already in flight is ignored
+    // even when the user has deleted back below the minimum length.
+    const seq = ++seqRef.current;
+    setResults([]);
+    setNotice('');
+    setNoticeIsError(false);
+    if (trimmed.length < SEARCH_MIN_CHARS) {
+      setSearching(false);
+      return undefined;
+    }
+    setSearching(true);
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const found = await api.searchUsers(trimmed, groupId, auth.token);
+        if (seqRef.current !== seq) return; // a newer query superseded this one
+        const list = Array.isArray(found) ? found.slice(0, 8) : [];
+        setResults(list);
+        if (list.length === 0) {
+          setNotice('No people found with that name.');
+        }
+      } catch (err) {
+        if (seqRef.current !== seq) return;
+        setResults([]);
+        setNotice(
+          err.message === 'Failed to fetch'
+            ? 'Could not reach the server. Check your connection and try again.'
+            : err.message || 'Something went wrong while searching. Please try again.'
+        );
+        setNoticeIsError(true);
+      } finally {
+        if (seqRef.current === seq) setSearching(false);
+      }
+    }, 300);
+    return () => clearTimeout(debounceRef.current);
+  }, [query, groupId, auth.token]);
+
+  const handleAdd = async (person) => {
+    setAddingId(person.id);
+    setError('');
+    try {
+      await api.addMember(groupId, person.id, auth.token);
+      setQuery('');
+      setResults([]);
+      setNotice('');
+      onAdded();
+    } catch (err) {
+      setError(err.message || 'Could not add that person. Please try again.');
+    } finally {
+      setAddingId(null);
+    }
+  };
+
+  const trimmed = query.trim();
+
+  return (
+    <div className="card p-4 sm:p-5 mb-5">
+      <p className="text-sm font-bold text-slate-900 dark:text-white mb-3 flex items-center gap-1.5">
+        <IconUserPlus size={15} className="text-brand-500" /> Add a member
+      </p>
+      <div className="relative">
+        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
+          <IconSearch size={15} />
+        </span>
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search people by name"
+          autoComplete="off"
+          className="input !pl-9"
+          aria-label="Search people by name to add them to the group"
+        />
+      </div>
+      {searching && (
+        <p className="mt-2.5 text-xs font-medium text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
+          <IconSpinner size={13} /> Searching…
+        </p>
+      )}
+      {!searching && trimmed.length > 0 && trimmed.length < SEARCH_MIN_CHARS && (
+        <p className="mt-2.5 text-xs text-slate-400 dark:text-slate-500">
+          Keep typing — at least {SEARCH_MIN_CHARS} characters.
+        </p>
+      )}
+      {!searching && notice && noticeIsError && (
+        <div className="mt-2.5">
+          <ErrorAlert>{notice}</ErrorAlert>
+        </div>
+      )}
+      {!searching && notice && !noticeIsError && (
+        <p className="mt-2.5 text-xs text-slate-400 dark:text-slate-500">{notice}</p>
+      )}
+      {results.length > 0 && (
+        <div className="mt-2.5 rounded-xl border border-slate-200 dark:border-slate-800 divide-y divide-slate-100 dark:divide-slate-800 overflow-hidden">
+          {results.map((person) => (
+            <button
+              key={person.id}
+              type="button"
+              onClick={() => handleAdd(person)}
+              disabled={addingId !== null}
+              className="w-full flex items-center gap-3 px-3.5 py-2.5 text-left hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors disabled:opacity-60"
+            >
+              <Avatar id={person.id} name={person.name} size="sm" />
+              <span className="flex-1 text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">
+                {person.name}
+              </span>
+              {addingId === person.id ? (
+                <IconSpinner size={15} className="text-brand-500" />
+              ) : (
+                <IconUserPlus size={15} className="text-brand-500 shrink-0" />
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+      {error && (
+        <div className="mt-2.5">
+          <ErrorAlert>{error}</ErrorAlert>
+        </div>
+      )}
     </div>
   );
 }
