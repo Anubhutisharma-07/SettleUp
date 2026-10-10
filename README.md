@@ -1,9 +1,9 @@
 <div align="center">
 
-<img src="docs/banner.svg" alt="SettleUp: split expenses, settle in the fewest payments" width="100%">
+<img src="docs/banner.svg" alt="SettleUp: shared expenses, finally settled" width="100%">
 
 <p>
-  <a href="https://settle-up-henna-seven.vercel.app"><img src="https://img.shields.io/badge/🚀_Live_Demo-Open_App-6366f1?style=for-the-badge" alt="Live demo"></a>
+  <a href="https://settle-up-henna-seven.vercel.app"><img src="https://img.shields.io/badge/🚀_Live_Demo-Open_App-22c55e?style=for-the-badge" alt="Live demo"></a>
   <a href="https://github.com/Anubhutisharma-07/SettleUp"><img src="https://img.shields.io/badge/Source-GitHub-181717?style=for-the-badge&logo=github" alt="GitHub"></a>
 </p>
 
@@ -18,29 +18,44 @@
   <img src="https://img.shields.io/badge/Jenkins-D24939?style=flat-square&logo=jenkins&logoColor=white" alt="Jenkins">
 </p>
 
+**Split group expenses. See who owes whom. Settle up in the fewest payments possible.**
+
 </div>
 
-> ⏳ **Heads up:** the backend runs on a free tier, so the first request after a quiet period can take 30 to 60 seconds while the server wakes up.
+> ⏳ The backend runs on a free tier, so the first request after a quiet period can take 30 to 60 seconds while the server wakes up.
 
----
-
-## 📖 Table of contents
-
-[Why SettleUp](#-why-settleup) · [Features](#-features) · [Security](#-security) · [Tech stack](#-tech-stack) · [Architecture](#-architecture) · [Getting started](#-getting-started) · [API](#-api-reference) · [Deployment](#-deployment) · [Roadmap](#-roadmap)
-
----
-
-## 🎯 Why SettleUp
-
-Four friends share a Goa trip. Everyone paid for something different, and by the end, everyone owes everyone a little.
-
-Most apps show you that web of small debts. **SettleUp collapses it into the minimum number of transfers.**
+<br>
 
 <div align="center">
-  <img src="docs/how-it-works.svg" alt="Three chained payments become one" width="90%">
+  <img src="docs/landing.png" alt="SettleUp landing page" width="100%">
 </div>
 
-<sub>Illustration of the idea, not real app output.</sub>
+---
+
+## 📖 Contents
+
+[Screenshots](#-screenshots) · [Features](#-features) · [Security](#-security) · [Tech stack](#-tech-stack) · [Architecture](#-architecture) · [Getting started](#-getting-started) · [API](#-api-reference) · [Deployment](#-deployment) · [Roadmap](#-roadmap)
+
+---
+
+## 🖼️ Screenshots
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/dashboard.png" alt="Dashboard"><br><sub><b>Dashboard.</b> Your total balance, money flows and settlement network.</sub></td>
+    <td width="50%"><img src="docs/dashboard-activity.png" alt="Groups and activity"><br><sub><b>Groups and activity.</b> Every group at a glance, plus a live activity feed.</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/expenses.png" alt="Expenses tab"><br><sub><b>Expenses.</b> Add a bill in seconds; payers are shown by name.</sub></td>
+    <td width="50%"><img src="docs/settle-up.png" alt="Settle Up tab"><br><sub><b>Settle Up.</b> The minimum set of payments that clears every debt.</sub></td>
+  </tr>
+</table>
+
+<details>
+<summary><b>Sign-up screen</b></summary>
+<br>
+<img src="docs/signup.png" alt="Sign up page" width="100%">
+</details>
 
 ---
 
@@ -54,18 +69,10 @@ Most apps show you that web of small debts. **SettleUp collapses it into the min
 | 🧾 **Expenses** | Record who paid and how much; the cost is split equally across the group |
 | ⚖️ **Live balances** | See who owes and who is owed, with real names |
 | 🧮 **Minimum-transaction settlement** | Reduces every balance to the fewest payments needed |
+| 📊 **Personal dashboard** | Total you owe, who you pay and who pays you, and a settlement network graph across all your groups |
+| 🕘 **Activity feed** | A running list of the latest expenses across your groups |
 | 🙋 **Profile menu** | Shows who is logged in, with logout |
 | 🌗 **Dark and light mode** | Switch themes from the UI |
-
-<!--
-📸 SCREENSHOTS: add 2-3 images here once you have them (use test accounts only).
-Put the files in a /docs folder and reference them like this:
-
-<p align="center">
-  <img src="docs/groups.png" width="45%" alt="Groups screen">
-  <img src="docs/settle-up.png" width="45%" alt="Settle Up screen">
-</p>
--->
 
 ---
 
