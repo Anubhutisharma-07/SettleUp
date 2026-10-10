@@ -1,284 +1,269 @@
 <div align="center">
 
-<img src="docs/banner.svg" alt="SettleUp: shared expenses, finally settled" width="100%">
+# 💸 SettleUp
 
-<p>
-  <a href="https://settle-up-henna-seven.vercel.app"><img src="https://img.shields.io/badge/🚀_Live_Demo-Open_App-22c55e?style=for-the-badge" alt="Live demo"></a>
-  <a href="https://github.com/Anubhutisharma-07/SettleUp"><img src="https://img.shields.io/badge/Source-GitHub-181717?style=for-the-badge&logo=github" alt="GitHub"></a>
-</p>
+### Split smarter. Settle simpler.
 
-<p>
-  <img src="https://img.shields.io/badge/Java-21-ED8B00?style=flat-square&logo=openjdk&logoColor=white" alt="Java 21">
-  <img src="https://img.shields.io/badge/Spring_Boot-6DB33F?style=flat-square&logo=springboot&logoColor=white" alt="Spring Boot">
-  <img src="https://img.shields.io/badge/Spring_Security-JWT-6DB33F?style=flat-square&logo=springsecurity&logoColor=white" alt="Spring Security JWT">
-  <img src="https://img.shields.io/badge/PostgreSQL-16-4169E1?style=flat-square&logo=postgresql&logoColor=white" alt="PostgreSQL">
-  <img src="https://img.shields.io/badge/React-61DAFB?style=flat-square&logo=react&logoColor=black" alt="React">
-  <img src="https://img.shields.io/badge/Tailwind_CSS-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white" alt="Tailwind CSS">
-  <img src="https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white" alt="Docker">
-  <img src="https://img.shields.io/badge/Jenkins-D24939?style=flat-square&logo=jenkins&logoColor=white" alt="Jenkins">
-</p>
+**Shared expenses shouldn't lead to complicated calculations.**
 
-**Split group expenses. See who owes whom. Settle up in the fewest payments possible.**
+Track group expenses, understand everyone's balance, and generate a simpler repayment plan — all in one place.
+
+<br/>
+
+[![Live Demo](https://img.shields.io/badge/🚀_Live_Demo-Visit_SetttleUp-16a34a?style=for-the-badge)](https://settle-up-henna-seven.vercel.app/)
+[![GitHub](https://img.shields.io/badge/GitHub-Source_Code-181717?style=for-the-badge&logo=github)](https://github.com/Anubhutisharma-07/SettleUp)
+
+<br/>
+
+**Built with Java · Spring Boot · Spring JDBC · PostgreSQL · React**
 
 </div>
 
-> ⏳ The backend runs on a free tier, so the first request after a quiet period can take 30 to 60 seconds while the server wakes up.
+---
 
-<br>
+## ✨ The problem
+
+Imagine a weekend trip with friends.
+
+One person books the stay. Another pays for dinner. Someone else covers the cab. By the end, everyone is asking the same question:
+
+> **Who owes whom, and how can we settle everything with fewer payments?**
+
+That is the problem **SettleUp** is designed to solve.
+
+Instead of just recording expenses, SettleUp calculates each member's net balance and suggests a simplified way to settle up.
+
+## 🚀 What can SettleUp do?
+
+| Feature | What it means |
+|---|---|
+| 👥 **Group expense tracking** | Keep shared expenses organized by group. |
+| 🧾 **Expense splitting** | Record who paid and how an expense is split. |
+| ⚖️ **Balance calculation** | Understand who should pay and who should receive money. |
+| 🔄 **Settlement suggestions** | Use a greedy algorithm to simplify the set of suggested repayments. |
+| 🔐 **Authentication** | Protect accounts and API access using Spring Security and JWT. |
+| 🖥️ **Web interface** | Manage expenses through a React frontend. |
+
+> Feature availability may depend on the current deployment configuration.
+
+## 🧠 The interesting part: settlement logic
+
+A group can have many individual expenses, but those expenses can often be consolidated into a smaller set of repayments.
+
+SettleUp calculates each member's **net balance**:
+
+- **Positive balance** → the member should receive money.
+- **Negative balance** → the member owes money.
+- **Zero balance** → the member is settled.
+
+The settlement logic then matches members who owe money with members who should receive money, producing a practical repayment plan.
+
+### A simple example
+
+Suppose a group has these net balances:
+
+| Member | Net balance |
+|---|---:|
+| A | +₹600 |
+| B | +₹200 |
+| C | −₹500 |
+| D | −₹300 |
+
+One possible settlement plan is:
+
+1. C pays A ₹500.
+2. D pays A ₹100.
+3. D pays B ₹200.
+
+The result is a clear set of repayments that settles every net balance.
+
+**Algorithm note:** SettleUp uses a greedy approach. It can reduce the number of repayments, but it does **not** guarantee the globally minimum number of transactions for every possible balance configuration. The plan is a calculated suggestion, not proof that a real payment has happened.
+
+## 🛠️ Built with
 
 <div align="center">
-  <img src="docs/landing.png" alt="SettleUp landing page" width="100%">
+
+| Backend | Data & security | Frontend & delivery |
+|---|---|---|
+| ![Java](https://img.shields.io/badge/Java_21-ED8B00?style=flat&logo=openjdk&logoColor=white) | ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=flat&logo=postgresql&logoColor=white) | ![React](https://img.shields.io/badge/React-20232A?style=flat&logo=react&logoColor=61DAFB) |
+| ![Spring Boot](https://img.shields.io/badge/Spring_Boot-6DB33F?style=flat&logo=springboot&logoColor=white) | ![Spring Security](https://img.shields.io/badge/Spring_Security-6DB33F?style=flat&logo=springsecurity&logoColor=white) | ![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat&logo=docker&logoColor=white) |
+| ![Spring JDBC](https://img.shields.io/badge/Spring_JDBC-6DB33F?style=flat&logo=spring&logoColor=white) | ![JWT](https://img.shields.io/badge/JWT-000000?style=flat&logo=jsonwebtokens&logoColor=white) | ![Jenkins](https://img.shields.io/badge/Jenkins-D24939?style=flat&logo=jenkins&logoColor=white) |
+| ![Maven](https://img.shields.io/badge/Maven-C71A36?style=flat&logo=apachemaven&logoColor=white) | | |
+
 </div>
 
----
+**Why Spring JDBC?** This project uses explicit SQL and Spring JDBC for database access rather than Spring Data JPA/Hibernate. That keeps the data-access layer visible and makes query behaviour easier to reason about.
 
-## 📖 Contents
-
-[Screenshots](#-screenshots) · [Features](#-features) · [Security](#-security) · [Tech stack](#-tech-stack) · [Architecture](#-architecture) · [Getting started](#-getting-started) · [API](#-api-reference) · [Deployment](#-deployment) · [Roadmap](#-roadmap)
-
----
-
-## 🖼️ Screenshots
-
-<table>
-  <tr>
-    <td width="50%"><img src="docs/dashboard.png" alt="Dashboard"><br><sub><b>Dashboard.</b> Your total balance, money flows and settlement network.</sub></td>
-    <td width="50%"><img src="docs/dashboard-activity.png" alt="Groups and activity"><br><sub><b>Groups and activity.</b> Every group at a glance, plus a live activity feed.</sub></td>
-  </tr>
-  <tr>
-    <td width="50%"><img src="docs/expenses.png" alt="Expenses tab"><br><sub><b>Expenses.</b> Add a bill in seconds; payers are shown by name.</sub></td>
-    <td width="50%"><img src="docs/settle-up.png" alt="Settle Up tab"><br><sub><b>Settle Up.</b> The minimum set of payments that clears every debt.</sub></td>
-  </tr>
-</table>
-
-<details>
-<summary><b>Sign-up screen</b></summary>
-<br>
-<img src="docs/signup.png" alt="Sign up page" width="100%">
-</details>
-
----
-
-## ✨ Features
-
-| | |
-| --- | --- |
-| 🔐 **Secure accounts** | Sign up and log in with BCrypt-hashed passwords and JWT tokens |
-| 👥 **Groups and roles** | The creator becomes `ADMIN`; everyone else is a `MEMBER` |
-| 🔎 **Add people by name** | Admins search by name (3+ characters, up to 8 results) and add with one click. No user IDs |
-| 🧾 **Expenses** | Record who paid and how much; the cost is split equally across the group |
-| ⚖️ **Live balances** | See who owes and who is owed, with real names |
-| 🧮 **Minimum-transaction settlement** | Reduces every balance to the fewest payments needed |
-| 📊 **Personal dashboard** | Total you owe, who you pay and who pays you, and a settlement network graph across all your groups |
-| 🕘 **Activity feed** | A running list of the latest expenses across your groups |
-| 🙋 **Profile menu** | Shows who is logged in, with logout |
-| 🌗 **Dark and light mode** | Switch themes from the UI |
-
----
-
-## 🛡️ Security
-
-Security is the part of this project I care about most, and it started with a bug I found in my own app.
-
-> **The bug.** I logged in as a second user and could read another group's balances just by guessing the group ID. The server checked *who* you were, but not whether you were *allowed* to see that group.
->
-> **The fix.** I reproduced it first, then added membership checks to every group and expense endpoint. Non-members now get `403`, and I re-ran the exact same request to confirm.
-
-Other protections:
-
-- 🔒 **Admin-only actions:** member search and adding members need the group `ADMIN` role
-- 💉 **Safe search:** parameterised queries, and `%` and `_` are escaped, so a search for `%%%` matches literal text instead of every user
-- 🚪 **Default deny:** only `/api/health` and the auth endpoints are public; everything else needs a valid token
-- 🔑 **No secrets in git:** config comes from environment variables, `.env` is gitignored and `.env.example` documents what is needed
-- 🙈 **No password hashes** in any API response
-- ❌ **Proper `401`** on a failed login, not a `200` with an error body
-
----
-
-## 🧰 Tech stack
-
-| Layer | Technology |
-| --- | --- |
-| **Backend** | Java 21, Spring Boot, Spring Security, Spring JDBC (no ORM) |
-| **Database** | PostgreSQL 16 |
-| **Auth** | JWT, BCrypt |
-| **Frontend** | React (Create React App), Tailwind CSS |
-| **Containers** | Docker, Docker Compose (Postgres, backend, frontend on nginx) |
-| **CI** | Jenkins, via the root `Jenkinsfile` |
-| **Hosting** | Render (API), Vercel (frontend), Neon (database) |
-
-> 💡 **Why plain JDBC?** On purpose: every query is hand-written, so I know exactly what runs against the database.
-
----
-
-## 🏗️ Architecture
-
-```mermaid
-flowchart LR
-    U([👤 User]) --> F["⚛️ React frontend<br/>Vercel"]
-    F -- "HTTPS + JWT" --> B["🍃 Spring Boot API<br/>Render"]
-    B -- JDBC --> D[("🐘 PostgreSQL<br/>Neon")]
-```
-
-### Database
-
-```mermaid
-erDiagram
-    users ||--o{ group_members : joins
-    expense_groups ||--o{ group_members : has
-    expense_groups ||--o{ expenses : contains
-    users ||--o{ expenses : pays
-    expenses ||--o{ expense_splits : "split into"
-    users ||--o{ expense_splits : owes
-```
-
-Money is stored as `NUMERIC(12,2)` with `CHECK` constraints, and equal shares are rounded `HALF_UP`. The schema uses `CREATE TABLE IF NOT EXISTS`, so it is safe to run more than once.
-
-<details>
-<summary><b>📁 Project structure</b></summary>
+## 🏗️ How it fits together
 
 ```text
-SettleUp/
-├── settleup/                 # Spring Boot backend
-│   ├── src/main/java/com/settleup/
-│   │   ├── controller/       # REST controllers: auth, groups, expenses, users, health
-│   │   ├── service/          # business logic, access checks, settlement algorithm
-│   │   ├── repository/       # JDBC data access
-│   │   ├── dto/              # request and response objects
-│   │   ├── entity/
-│   │   └── exception/        # e.g. ForbiddenException mapped to 403
-│   ├── src/main/resources/schema.sql
-│   └── Dockerfile
-├── frontend/                 # React + Tailwind app
-├── docker-compose.yml
-├── Jenkinsfile
-└── .env.example
+┌──────────────────────────┐
+│      React Frontend      │
+└────────────┬─────────────┘
+             │ HTTP / REST
+             ▼
+┌──────────────────────────┐
+│     Spring Boot API      │
+│                          │
+│  Controllers             │
+│  Services / business     │
+│  JDBC data access        │
+│  Spring Security + JWT   │
+└────────────┬─────────────┘
+             │ SQL
+             ▼
+┌──────────────────────────┐
+│       PostgreSQL         │
+└──────────────────────────┘
 ```
 
-</details>
+The application separates the frontend, API layer, business logic, data access, and persistence responsibilities.
 
----
+## 🧑‍💻 Run it locally
 
-## 🚀 Getting started
+Want to explore the code or run SettleUp on your machine? Follow these steps.
 
-### Option 1: Docker Compose (easiest)
+### Prerequisites
+
+- Java 21
+- Maven, or the Maven Wrapper if included
+- Node.js and npm
+- PostgreSQL, or Docker with Docker Compose
+
+### 1. Clone the repository
 
 ```bash
 git clone https://github.com/Anubhutisharma-07/SettleUp.git
 cd SettleUp
-cp .env.example .env        # then set POSTGRES_PASSWORD and JWT_SECRET
-docker compose up --build
 ```
 
-Then open **http://localhost:3000**. The API runs at http://localhost:8080.
+### 2. Configure the environment
 
-### Option 2: Run each part yourself
+Create a local, git-ignored `.env` file or use the configuration method expected by your checkout.
 
-Needs Java 21, Node 20 and a running PostgreSQL with `settleup/src/main/resources/schema.sql` loaded.
+You'll need values for:
+
+- PostgreSQL connection URL
+- Database username and password
+- JWT signing secret
+- Frontend API base URL, if configured separately
+
+Check the backend configuration and `docker-compose.yml` for the **exact environment variable names**. Apply any schema or SQL initialization scripts included in the repository.
+
+> 🔒 Never commit `.env`, database credentials, JWT secrets, or other private configuration.
+
+### 3. Start the backend
+
+The backend directory in the repository is `settleup`:
 
 ```bash
-# Backend
 cd settleup
-./mvnw spring-boot:run
+mvn spring-boot:run
+```
 
-# Frontend (new terminal)
+If the repository includes a Maven Wrapper, you can use it instead of a globally installed Maven version.
+
+### 4. Start the frontend
+
+In a separate terminal:
+
+```bash
 cd frontend
-npm ci
+npm install
 npm start
 ```
 
-<details>
-<summary><b>⚙️ Configuration variables</b></summary>
+Follow the terminal output for the local frontend URL. Ensure the frontend's API configuration points to your running backend.
 
-Everything has a local-friendly default, so nothing changes unless you set it.
+### 🐳 Run with Docker Compose
 
-| Variable | Purpose |
-| --- | --- |
-| `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USERNAME`, `DB_PASSWORD` | Database connection |
-| `DB_SSLMODE` | Optional SSL for managed databases such as Neon |
-| `JWT_SECRET` | Secret used to sign tokens. Use a long random value |
-| `JWT_EXPIRATION_MS` | Token lifetime (default 24 hours) |
-| `CORS_ALLOWED_ORIGINS` | Comma-separated list of allowed frontend origins |
-| `PORT` | Backend port (default 8080) |
-| `REACT_APP_API_URL` | API base URL, baked in at frontend build time |
-
-</details>
-
-### 🧪 Run the tests
+From the repository root, after configuring the required environment variables:
 
 ```bash
-cd settleup
-./mvnw clean test
+docker compose up --build
 ```
 
-The suite has 6 tests, including the settlement algorithm. The startup test needs PostgreSQL running. For the frontend, `CI=true npm run build` must finish with zero warnings.
+Run in the background:
+
+```bash
+docker compose up --build -d
+```
+
+Stop the services:
+
+```bash
+docker compose down
+```
+
+Check `docker-compose.yml` for the exact ports, services, volumes, and configuration used by your checkout.
+
+## 🧪 Testing
+
+Run the backend tests from the backend directory:
+
+```bash
+mvn test
+```
+
+Important areas to test include:
+
+- Authentication and authorization
+- Expense creation and split validation
+- Net balance calculations
+- Settlement suggestions for positive, negative, and zero balances
+- Empty groups and already-settled balances
+- Access control for group-specific operations
+
+If a Postman collection is included in the repository, use it to explore the API endpoints.
+
+## ⚙️ CI and deployment
+
+The repository includes Docker Compose configuration and a Jenkins pipeline definition. Refer to the root `Jenkinsfile` and `docker-compose.yml` for the current build and deployment workflow.
+
+Keep CI credentials in Jenkins credentials or an appropriate secret manager; do not hard-code them in source files.
+
+## 🗺️ What's next?
+
+Potential improvements include:
+
+- More automated tests for settlement edge cases
+- Better observability and production error reporting
+- More robust deployment and CI checks
+- Clearer payment confirmation and activity history
+- Further accessibility and responsive-design refinements
+
+## 🤝 Feedback and contributions
+
+Found something to improve? Have an idea for making shared expenses easier?
+
+Feedback, bug reports, and focused contributions are welcome.
+
+1. Fork the repository.
+2. Create a feature branch.
+3. Make your change and add or update tests.
+4. Run relevant tests.
+5. Open a pull request explaining the change.
+
+Please avoid committing secrets, generated build files, or unrelated changes.
+
+## 👩‍💻 About the developer
+
+**Anubhuti Sharma**  
+Java · Spring Boot · Backend Development
+
+- [GitHub](https://github.com/Anubhutisharma-07)
+- [LinkedIn](https://www.linkedin.com/in/anubhuti-sharma-93571931a/)
 
 ---
-
-## 📡 API reference
-
-All endpoints except auth and health need `Authorization: Bearer <token>`.
-
-| Method | Endpoint | Description |
-| --- | --- | --- |
-| `GET` | `/api/health` | Public health check |
-| `POST` | `/api/auth/signup` | Create an account |
-| `POST` | `/api/auth/login` | Log in, returns `{token, userId, name, email}`. `401` on bad credentials |
-| `GET` | `/api/users/me` | The logged-in user |
-| `GET` | `/api/users/search?q=&groupId=` | Find users to add (group admin only, `q` 3+ characters) |
-| `GET` | `/api/groups` | Your groups |
-| `POST` | `/api/groups` | Create a group |
-| `GET` | `/api/groups/{id}/members` | Members with names and roles |
-| `POST` | `/api/groups/{id}/members` | Add a member (admin only) |
-| `GET` | `/api/groups/{id}/expenses` | Expenses with payer names |
-| `POST` | `/api/groups/{id}/expenses` | Add an expense |
-| `GET` | `/api/groups/{id}/balances` | Net balance per member |
-| `GET` | `/api/groups/{id}/settlements` | Fewest payments needed to settle |
-
-Non-members get `403` on every group endpoint.
-
----
-
-## ☁️ Deployment
-
-| Part | Service | Notes |
-| --- | --- | --- |
-| 🗄️ Database | **Neon** | Load `schema.sql` once |
-| 🍃 Backend | **Render** (Docker web service from `settleup/Dockerfile`) | Set the `DB_*`, `JWT_SECRET`, `CORS_ALLOWED_ORIGINS` and `PORT` variables |
-| ⚛️ Frontend | **Vercel** (root directory `frontend`) | Set `REACT_APP_API_URL` to the backend URL |
-
-> ⚠️ `CORS_ALLOWED_ORIGINS` must hold the exact Vercel URL with no trailing slash, or the browser blocks every request.
-
-The backend Dockerfile sets `-XX:MaxRAMPercentage=70 -XX:+UseSerialGC` so the JVM fits comfortably in Render's 512 MB free tier.
-
-### 🔁 CI
-
-The root `Jenkinsfile` builds both halves: the backend is compiled, tested and packaged with Maven, and the frontend is installed with `npm ci` and built.
-
----
-
-## 🗺️ Roadmap
-
-- [x] Auth with JWT and BCrypt
-- [x] Groups, roles and name-based member search
-- [x] Equal-split expenses and balances
-- [x] Minimum-transaction settlement
-- [x] Access control on all group endpoints
-- [x] Docker Compose, Jenkins CI and live deployment
-- [ ] More split types (exact amounts, percentages)
-- [ ] Edit and delete expenses
-- [ ] Tests for the API layer
-
----
-
-## 👩‍💻 Author
-
-**Anubhuti Sharma**: second-year student, looking for backend / SDE internships.
-
-[![GitHub](https://img.shields.io/badge/GitHub-Anubhutisharma--07-181717?style=flat-square&logo=github)](https://github.com/Anubhutisharma-07)
 
 <div align="center">
 
-If you try the app, I'd love your feedback. ⭐ a star is always appreciated!
+### 💚 Give SettleUp a try
+
+If you explore the app, I'd love to hear what you think.
+
+**[Open the live application →](https://settle-up-henna-seven.vercel.app/)**
+
+*Split smarter. Settle simpler.*
 
 </div>
