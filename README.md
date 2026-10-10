@@ -1,194 +1,277 @@
 <div align="center">
 
-# 💸 SettleUp
+<img src="docs/banner.svg" alt="SettleUp: split expenses, settle in the fewest payments" width="100%">
 
-### Split expenses. Settle up in the fewest payments possible.
+<p>
+  <a href="https://settle-up-henna-seven.vercel.app"><img src="https://img.shields.io/badge/🚀_Live_Demo-Open_App-6366f1?style=for-the-badge" alt="Live demo"></a>
+  <a href="https://github.com/Anubhutisharma-07/SettleUp"><img src="https://img.shields.io/badge/Source-GitHub-181717?style=for-the-badge&logo=github" alt="GitHub"></a>
+</p>
 
-[![Java](https://img.shields.io/badge/Java-21-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)](https://www.oracle.com/java/)
-[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-6DB33F?style=for-the-badge&logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
-[![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://react.dev/)
-[![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
-[![Jenkins](https://img.shields.io/badge/Jenkins-D24939?style=for-the-badge&logo=jenkins&logoColor=white)](https://www.jenkins.io/)
-
-*A full-stack expense-splitting app that doesn't just tell you who owes what — it works out the*
-***smallest possible set of payments*** *to settle the whole group.*
+<p>
+  <img src="https://img.shields.io/badge/Java-21-ED8B00?style=flat-square&logo=openjdk&logoColor=white" alt="Java 21">
+  <img src="https://img.shields.io/badge/Spring_Boot-6DB33F?style=flat-square&logo=springboot&logoColor=white" alt="Spring Boot">
+  <img src="https://img.shields.io/badge/Spring_Security-JWT-6DB33F?style=flat-square&logo=springsecurity&logoColor=white" alt="Spring Security JWT">
+  <img src="https://img.shields.io/badge/PostgreSQL-16-4169E1?style=flat-square&logo=postgresql&logoColor=white" alt="PostgreSQL">
+  <img src="https://img.shields.io/badge/React-61DAFB?style=flat-square&logo=react&logoColor=black" alt="React">
+  <img src="https://img.shields.io/badge/Tailwind_CSS-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white" alt="Tailwind CSS">
+  <img src="https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white" alt="Docker">
+  <img src="https://img.shields.io/badge/Jenkins-D24939?style=flat-square&logo=jenkins&logoColor=white" alt="Jenkins">
+</p>
 
 </div>
 
+> ⏳ **Heads up:** the backend runs on a free tier, so the first request after a quiet period can take 30 to 60 seconds while the server wakes up.
+
 ---
 
-## 🤔 Why this exists
+## 📖 Table of contents
 
-Every splitting app tells you "Alice owes Bob ₹500, Bob owes Charlie ₹300, Charlie owes Alice ₹200."
+[Why SettleUp](#-why-settleup) · [Features](#-features) · [Security](#-security) · [Tech stack](#-tech-stack) · [Architecture](#-architecture) · [Getting started](#-getting-started) · [API](#-api-reference) · [Deployment](#-deployment) · [Roadmap](#-roadmap)
 
-SettleUp looks at that mess and says: **"Alice pays Charlie ₹300. Done."** One transaction instead of three.
+---
 
-That's a greedy graph-optimization algorithm, built from scratch — not pulled from a library — sitting on top of a hand-rolled Spring Boot backend with raw SQL (no ORM), JWT auth, a React frontend, and a full Docker + Jenkins pipeline behind it.
+## 🎯 Why SettleUp
+
+Four friends share a Goa trip. Everyone paid for something different, and by the end, everyone owes everyone a little.
+
+Most apps show you that web of small debts. **SettleUp collapses it into the minimum number of transfers.**
+
+<div align="center">
+  <img src="docs/how-it-works.svg" alt="Three chained payments become one" width="90%">
+</div>
+
+<sub>Illustration of the idea, not real app output.</sub>
 
 ---
 
 ## ✨ Features
 
 | | |
-|---|---|
-| 🔐 **Auth** | JWT-based sessions, BCrypt password hashing |
-| 👥 **Groups** | Create groups, invite members, admin-only controls |
-| 🧾 **Expenses** | Add expenses, auto-split equally among current members |
-| 📊 **Balances** | Live net balance per person, color-coded owed/owes |
-| ⚡ **Settlement engine** | The star of the show — minimum-transaction payout plan |
-| 🌗 **Dark / light mode** | Because everyone has a preference |
+| --- | --- |
+| 🔐 **Secure accounts** | Sign up and log in with BCrypt-hashed passwords and JWT tokens |
+| 👥 **Groups and roles** | The creator becomes `ADMIN`; everyone else is a `MEMBER` |
+| 🔎 **Add people by name** | Admins search by name (3+ characters, up to 8 results) and add with one click. No user IDs |
+| 🧾 **Expenses** | Record who paid and how much; the cost is split equally across the group |
+| ⚖️ **Live balances** | See who owes and who is owed, with real names |
+| 🧮 **Minimum-transaction settlement** | Reduces every balance to the fewest payments needed |
+| 🙋 **Profile menu** | Shows who is logged in, with logout |
+| 🌗 **Dark and light mode** | Switch themes from the UI |
+
+<!--
+📸 SCREENSHOTS: add 2-3 images here once you have them (use test accounts only).
+Put the files in a /docs folder and reference them like this:
+
+<p align="center">
+  <img src="docs/groups.png" width="45%" alt="Groups screen">
+  <img src="docs/settle-up.png" width="45%" alt="Settle Up screen">
+</p>
+-->
 
 ---
 
-## 🧠 The Algorithm (the whole point of this project)
+## 🛡️ Security
 
-**The problem:** given a group's net balances — some people owed money, some owing it — what's the *smallest* set of payments that zeroes everyone out?
+Security is the part of this project I care about most, and it started with a bug I found in my own app.
 
-**The approach:**
-```
-1. Split members into debtors (owe money) and creditors (owed money)
-2. Match the current debtor with the current creditor
-3. Settle the SMALLER of what's owed vs what's due between them
-4. Whoever hits ₹0 first moves to the next person in their list
-5. Repeat until both lists are empty
-```
+> **The bug.** I logged in as a second user and could read another group's balances just by guessing the group ID. The server checked *who* you were, but not whether you were *allowed* to see that group.
+>
+> **The fix.** I reproduced it first, then added membership checks to every group and expense endpoint. Non-members now get `403`, and I re-ran the exact same request to confirm.
 
-Runs in **O(n log n)**, produces at most `n - 1` transactions for `n` people — a real reduction over the naive "everyone pays everyone" approach.
+Other protections:
 
-> **Honest caveat:** the true minimum-transaction problem is NP-hard in general. This greedy approach doesn't *guarantee* the mathematical optimum in every edge case — but it gets extremely close, runs fast, and is the same practical tradeoff real apps like Splitwise make.
+- 🔒 **Admin-only actions:** member search and adding members need the group `ADMIN` role
+- 💉 **Safe search:** parameterised queries, and `%` and `_` are escaped, so a search for `%%%` matches literal text instead of every user
+- 🚪 **Default deny:** only `/api/health` and the auth endpoints are public; everything else needs a valid token
+- 🔑 **No secrets in git:** config comes from environment variables, `.env` is gitignored and `.env.example` documents what is needed
+- 🙈 **No password hashes** in any API response
+- ❌ **Proper `401`** on a failed login, not a `200` with an error body
 
-It's implemented as a **pure function** — `settleBalances(List<UserBalance>)` — with zero database dependency, so it's fully unit-tested in isolation. See [`SettlementServiceTest.java`](./settleup/src/test/java/com/settleup/service/SettlementServiceTest.java) for coverage of edge cases: already-settled groups, multiple debtors/creditors, uneven splits, empty input.
+---
+
+## 🧰 Tech stack
+
+| Layer | Technology |
+| --- | --- |
+| **Backend** | Java 21, Spring Boot, Spring Security, Spring JDBC (no ORM) |
+| **Database** | PostgreSQL 16 |
+| **Auth** | JWT, BCrypt |
+| **Frontend** | React (Create React App), Tailwind CSS |
+| **Containers** | Docker, Docker Compose (Postgres, backend, frontend on nginx) |
+| **CI** | Jenkins, via the root `Jenkinsfile` |
+| **Hosting** | Render (API), Vercel (frontend), Neon (database) |
+
+> 💡 **Why plain JDBC?** On purpose: every query is hand-written, so I know exactly what runs against the database.
 
 ---
 
 ## 🏗️ Architecture
 
-```
-┌──────────────┐   HTTP + JWT    ┌───────────────────┐   Raw SQL / JDBC   ┌────────────┐
-│              │ ──────────────▶ │                    │ ─────────────────▶ │            │
-│  React SPA   │                 │  Spring Boot API   │                     │ PostgreSQL │
-│              │ ◀────────────── │                    │ ◀───────────────── │            │
-└──────────────┘   JSON response └───────────────────┘   ResultSet → POJO  └────────────┘
+```mermaid
+flowchart LR
+    U([👤 User]) --> F["⚛️ React frontend<br/>Vercel"]
+    F -- "HTTPS + JWT" --> B["🍃 Spring Boot API<br/>Render"]
+    B -- JDBC --> D[("🐘 PostgreSQL<br/>Neon")]
 ```
 
-- **No ORM** — every query, including multi-table joins for balance calculation, is hand-written SQL via Spring JDBC. A deliberate choice to show direct SQL fluency.
-- **Stateless JWT auth** — token issued on login/signup, validated on every request by a custom `JwtAuthFilter`, no server-side session state.
-- **Authorization at the service layer** — e.g. only group admins can add members; only members can add expenses to their own group.
+### Database
+
+```mermaid
+erDiagram
+    users ||--o{ group_members : joins
+    expense_groups ||--o{ group_members : has
+    expense_groups ||--o{ expenses : contains
+    users ||--o{ expenses : pays
+    expenses ||--o{ expense_splits : "split into"
+    users ||--o{ expense_splits : owes
+```
+
+Money is stored as `NUMERIC(12,2)` with `CHECK` constraints, and equal shares are rounded `HALF_UP`. The schema uses `CREATE TABLE IF NOT EXISTS`, so it is safe to run more than once.
+
+<details>
+<summary><b>📁 Project structure</b></summary>
+
+```text
+SettleUp/
+├── settleup/                 # Spring Boot backend
+│   ├── src/main/java/com/settleup/
+│   │   ├── controller/       # REST controllers: auth, groups, expenses, users, health
+│   │   ├── service/          # business logic, access checks, settlement algorithm
+│   │   ├── repository/       # JDBC data access
+│   │   ├── dto/              # request and response objects
+│   │   ├── entity/
+│   │   └── exception/        # e.g. ForbiddenException mapped to 403
+│   ├── src/main/resources/schema.sql
+│   └── Dockerfile
+├── frontend/                 # React + Tailwind app
+├── docker-compose.yml
+├── Jenkinsfile
+└── .env.example
+```
+
+</details>
 
 ---
 
-## 🗄️ Database Schema
+## 🚀 Getting started
 
-```
-users            expense_groups        group_members         expenses            expense_splits
-─────            ──────────────        ─────────────         ────────            ──────────────
-id               id                    group_id (FK)          id                  id
-name             name                  user_id  (FK)          group_id (FK)       expense_id (FK)
-email            created_by (FK)       role                   paid_by  (FK)       user_id (FK)
-password         created_at            joined_at              amount              amount_owed
-created_at                                                    description
-                                                                expense_date
-```
-
----
-
-## 📡 API Reference
-
-| Method | Endpoint | What it does |
-|---|---|---|
-| `POST` | `/api/auth/signup` | Create account → returns JWT |
-| `POST` | `/api/auth/login` | Authenticate → returns JWT |
-| `GET` | `/api/groups` | List your groups |
-| `POST` | `/api/groups` | Create a group |
-| `POST` | `/api/groups/{id}/members` | Add a member *(admin only)* |
-| `GET` | `/api/groups/{id}/expenses` | List a group's expenses |
-| `POST` | `/api/groups/{id}/expenses` | Add an expense (auto equal-split) |
-| `GET` | `/api/groups/{id}/balances` | Net balance per member |
-| `GET` | `/api/groups/{id}/settlements` | ⭐ The optimized settlement plan |
-
----
-
-## 🚀 Getting Started
-
-### The fast way — Docker Compose
+### Option 1: Docker Compose (easiest)
 
 ```bash
+git clone https://github.com/Anubhutisharma-07/SettleUp.git
+cd SettleUp
+cp .env.example .env        # then set POSTGRES_PASSWORD and JWT_SECRET
 docker compose up --build
 ```
 
-That's it. This spins up a fresh PostgreSQL container, auto-applies the schema, builds the backend, and starts the API on `localhost:8080`. Zero manual setup.
+Then open **http://localhost:3000**. The API runs at http://localhost:8080.
 
-### The manual way
+### Option 2: Run each part yourself
 
-**Backend**
+Needs Java 21, Node 20 and a running PostgreSQL with `settleup/src/main/resources/schema.sql` loaded.
+
 ```bash
+# Backend
 cd settleup
 ./mvnw spring-boot:run
-```
-Needs a local Postgres instance — configure via `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USERNAME`, `DB_PASSWORD` env vars, or use the defaults in `application.properties`.
 
-**Frontend**
-```bash
+# Frontend (new terminal)
 cd frontend
-npm install
+npm ci
 npm start
 ```
-Runs on `localhost:3000`.
 
-### Run the tests
+<details>
+<summary><b>⚙️ Configuration variables</b></summary>
+
+Everything has a local-friendly default, so nothing changes unless you set it.
+
+| Variable | Purpose |
+| --- | --- |
+| `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USERNAME`, `DB_PASSWORD` | Database connection |
+| `DB_SSLMODE` | Optional SSL for managed databases such as Neon |
+| `JWT_SECRET` | Secret used to sign tokens. Use a long random value |
+| `JWT_EXPIRATION_MS` | Token lifetime (default 24 hours) |
+| `CORS_ALLOWED_ORIGINS` | Comma-separated list of allowed frontend origins |
+| `PORT` | Backend port (default 8080) |
+| `REACT_APP_API_URL` | API base URL, baked in at frontend build time |
+
+</details>
+
+### 🧪 Run the tests
+
 ```bash
 cd settleup
-./mvnw test
+./mvnw clean test
 ```
 
----
-
-## 🔁 CI/CD
-
-A Jenkins declarative pipeline (`Jenkinsfile`) runs on every push: checks out the repo, builds with Maven, runs the full JUnit suite — including the settlement algorithm tests — and packages the app.
+The suite has 6 tests, including the settlement algorithm. The startup test needs PostgreSQL running. For the frontend, `CI=true npm run build` must finish with zero warnings.
 
 ---
 
-## 📁 Project Structure
+## 📡 API reference
 
-```
-settleup/
-├── settleup/                 🌱 Spring Boot backend
-│   ├── src/main/java/com/settleup/
-│   │   ├── controller/         REST endpoints
-│   │   ├── service/             Business logic (⭐ SettlementService lives here)
-│   │   ├── repository/         Hand-written SQL via Spring JDBC
-│   │   ├── entity/               Domain models
-│   │   ├── security/             JWT filter & utils
-│   │   └── dto/                   Request/response shapes
-│   ├── src/test/                 JUnit tests
-│   ├── Dockerfile
-│   └── pom.xml
-├── frontend/                  ⚛️ React app
-│   └── src/
-│       ├── pages/                 Login, Dashboard, GroupDetail
-│       └── components/
-├── docker-compose.yml          🐳 Backend + Postgres orchestration
-├── Jenkinsfile                  🔁 CI pipeline
-└── README.md
-```
+All endpoints except auth and health need `Authorization: Bearer <token>`.
+
+| Method | Endpoint | Description |
+| --- | --- | --- |
+| `GET` | `/api/health` | Public health check |
+| `POST` | `/api/auth/signup` | Create an account |
+| `POST` | `/api/auth/login` | Log in, returns `{token, userId, name, email}`. `401` on bad credentials |
+| `GET` | `/api/users/me` | The logged-in user |
+| `GET` | `/api/users/search?q=&groupId=` | Find users to add (group admin only, `q` 3+ characters) |
+| `GET` | `/api/groups` | Your groups |
+| `POST` | `/api/groups` | Create a group |
+| `GET` | `/api/groups/{id}/members` | Members with names and roles |
+| `POST` | `/api/groups/{id}/members` | Add a member (admin only) |
+| `GET` | `/api/groups/{id}/expenses` | Expenses with payer names |
+| `POST` | `/api/groups/{id}/expenses` | Add an expense |
+| `GET` | `/api/groups/{id}/balances` | Net balance per member |
+| `GET` | `/api/groups/{id}/settlements` | Fewest payments needed to settle |
+
+Non-members get `403` on every group endpoint.
 
 ---
 
-## 🔮 What's Next
+## ☁️ Deployment
 
-- [ ] Input validation + consistent HTTP error responses
-- [ ] Custom (non-equal) split amounts
-- [ ] Frontend containerized and added to `docker-compose.yml`
-- [ ] Broader test coverage beyond the settlement engine
+| Part | Service | Notes |
+| --- | --- | --- |
+| 🗄️ Database | **Neon** | Load `schema.sql` once |
+| 🍃 Backend | **Render** (Docker web service from `settleup/Dockerfile`) | Set the `DB_*`, `JWT_SECRET`, `CORS_ALLOWED_ORIGINS` and `PORT` variables |
+| ⚛️ Frontend | **Vercel** (root directory `frontend`) | Set `REACT_APP_API_URL` to the backend URL |
+
+> ⚠️ `CORS_ALLOWED_ORIGINS` must hold the exact Vercel URL with no trailing slash, or the browser blocks every request.
+
+The backend Dockerfile sets `-XX:MaxRAMPercentage=70 -XX:+UseSerialGC` so the JVM fits comfortably in Render's 512 MB free tier.
+
+### 🔁 CI
+
+The root `Jenkinsfile` builds both halves: the backend is compiled, tested and packaged with Maven, and the frontend is installed with `npm ci` and built.
 
 ---
+
+## 🗺️ Roadmap
+
+- [x] Auth with JWT and BCrypt
+- [x] Groups, roles and name-based member search
+- [x] Equal-split expenses and balances
+- [x] Minimum-transaction settlement
+- [x] Access control on all group endpoints
+- [x] Docker Compose, Jenkins CI and live deployment
+- [ ] More split types (exact amounts, percentages)
+- [ ] Edit and delete expenses
+- [ ] Tests for the API layer
+
+---
+
+## 👩‍💻 Author
+
+**Anubhuti Sharma**: second-year student, looking for backend / SDE internships.
+
+[![GitHub](https://img.shields.io/badge/GitHub-Anubhutisharma--07-181717?style=flat-square&logo=github)](https://github.com/Anubhutisharma-07)
 
 <div align="center">
 
-**Built by Anubhuti Sharma** — a portfolio project covering backend engineering (custom SQL, auth, algorithm design), full-stack integration, and DevOps (Docker, CI/CD).
-
-⭐ If this helped you understand debt-settlement algorithms, consider starring the repo!
+If you try the app, I'd love your feedback. ⭐ a star is always appreciated!
 
 </div>
